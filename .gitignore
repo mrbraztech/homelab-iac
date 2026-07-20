@@ -1,0 +1,40 @@
+# Ansible
+*.retry
+.ansible/
+
+# Secrets and vault passwords
+.env
+.env.*
+!.env.example
+*.vault-password
+.vault-password
+secrets.yml
+secrets.yaml
+
+# SSH keys
+*.pem
+*.key
+id_rsa
+id_ed25519
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Operating systems
+.DS_Store
+Thumbs.db
+
+# OpenTofu / Terraform — future use
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
