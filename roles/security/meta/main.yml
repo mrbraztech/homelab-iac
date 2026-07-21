@@ -1,0 +1,15 @@
+---
+galaxy_info:
+  author: homelab
+  description: Security hardening for homelab Linux hosts
+  license: MIT
+  min_ansible_version: "2.15"
+
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+
+dependencies:
+  - common

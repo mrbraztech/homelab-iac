@@ -1,0 +1,40 @@
+---
+- name: Install Docker prerequisites
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create keyrings directory
+  ansible.builtin.file:
+    path: "{{ docker_gpg_key_path | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Download Docker GPG key
+  ansible.builtin.get_url:
+    url: "{{ docker_gpg_key_url }}"
+    dest: "{{ docker_gpg_key_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Add Docker repository
+  ansible.builtin.copy:
+    dest: "{{ docker_repo_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      Types: deb
+      URIs: {{ docker_repo_url }}
+      Suites: {{ ansible_distribution_release }}
+      Components: stable
+      Architectures: {{ ansible_architecture | replace('x86_64', 'amd64') | replace('aarch64', 'arm64') }}
+      Signed-By: {{ docker_gpg_key_path }}

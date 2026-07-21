@@ -1,0 +1,30 @@
+---
+- name: Remove conflicting Docker packages
+  ansible.builtin.import_tasks: remove_conflicting.yml
+  tags:
+    - docker
+    - packages
+
+- name: Configure Docker repository
+  ansible.builtin.import_tasks: repository.yml
+  tags:
+    - docker
+    - repository
+
+- name: Install Docker packages
+  ansible.builtin.import_tasks: packages.yml
+  tags:
+    - docker
+    - packages
+
+- name: Configure Docker daemon
+  ansible.builtin.import_tasks: daemon.yml
+  tags:
+    - docker
+    - configuration
+
+- name: Manage Docker users
+  ansible.builtin.import_tasks: users.yml
+  tags:
+    - docker
+    - users

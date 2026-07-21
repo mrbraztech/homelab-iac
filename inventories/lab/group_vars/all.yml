@@ -1,0 +1,14 @@
+---
+common_timezone: America/Sao_Paulo
+
+bootstrap_admin_user: ansible
+
+bootstrap_admin_authorized_keys:
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF6l9hFUF6jc3AentLpKRyUgaE7PeqqW5nUsBGxtti9C homelab"
+
+docker_users:
+  - "{{ bootstrap_admin_user }}"
+
+# Keep enabled on first provision.
+security_ssh_password_authentication: true
+security_ssh_permit_root_login: "yes"

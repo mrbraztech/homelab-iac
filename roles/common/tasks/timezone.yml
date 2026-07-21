@@ -1,0 +1,11 @@
+---
+- name: Configure system timezone
+  community.general.timezone:
+    name: "{{ common_timezone }}"
+
+- name: Configure hostname
+  ansible.builtin.hostname:
+    name: "{{ common_hostname }}"
+  when:
+    - common_manage_hostname
+    - common_hostname | length > 0

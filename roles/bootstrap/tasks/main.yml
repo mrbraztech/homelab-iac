@@ -1,0 +1,12 @@
+---
+- name: Install minimum bootstrap packages
+  ansible.builtin.import_tasks: packages.yml
+  tags:
+    - bootstrap
+    - packages
+
+- name: Configure administrative user
+  ansible.builtin.import_tasks: user.yml
+  tags:
+    - bootstrap
+    - user

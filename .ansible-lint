@@ -1,0 +1,10 @@
+profile: production
+
+exclude_paths:
+  - .git/
+  - .venv/
+  - venv/
+  - .cache/
+  - collections/ansible_collections/
+  - .tox/
+  - tmp/
