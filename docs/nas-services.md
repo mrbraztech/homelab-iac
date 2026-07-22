@@ -50,21 +50,33 @@ vault_postgres_password: "your-secure-password"
 
 ## Deployment
 
-```bash
-# Full chain (first time)
-ansible-playbook playbooks/bootstrap.yml --limit nas
-# Update inventory: root → ansible
-ansible-playbook playbooks/common.yml --limit nas
-ansible-playbook playbooks/security.yml --limit nas
-ansible-playbook playbooks/docker.yml --limit nas
+**For any new host**, run the bootstrap chain first to create the `ansible` user:
 
+```bash
+# 1. Bootstrap (creates ansible user, SSH key, sudo)
+ansible-playbook playbooks/bootstrap.yml --limit <host>
+
+# 2. Update inventory: root → ansible (manual step)
+
+# 3. Base roles
+ansible-playbook playbooks/common.yml --limit <host>
+ansible-playbook playbooks/security.yml --limit <host>
+ansible-playbook playbooks/docker.yml --limit <host>
+```
+
+**For NAS specifically**, after the base chain:
+
+```bash
 # If migrating from existing containers: run migration script FIRST
 ./scripts/migrate-postgres.sh
 
 # If fresh install (no existing containers): run playbook directly
 ansible-playbook playbooks/nas.yml
+```
 
-# Subsequent updates
+**Subsequent updates** (after bootstrap):
+
+```bash
 ansible-playbook playbooks/nas.yml --check --diff
 ansible-playbook playbooks/nas.yml
 ```

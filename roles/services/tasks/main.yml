@@ -1,10 +1,4 @@
 ---
-- name: Import user setup tasks
-  ansible.builtin.import_tasks: user.yml
-  tags:
-    - services
-    - user
-
 - name: Ensure installation directory exists
   ansible.builtin.file:
     path: "{{ services_install_dir }}"
