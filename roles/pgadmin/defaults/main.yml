@@ -1,0 +1,7 @@
+---
+pgadmin_image: dpage/pgadmin4:latest
+pgadmin_container_name: pgadmin
+pgadmin_email: admin@omni.corp
+pgadmin_password: "{{ vault_pgadmin_password }}"
+pgadmin_http_port: "8080"
+pgadmin_install_dir: /opt/pgadmin

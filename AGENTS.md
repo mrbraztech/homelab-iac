@@ -114,7 +114,7 @@ The goal is to migrate all services from manual Proxmox CT management into Ansib
 ### Roadmap
 
 1. ✅ Base roles: `bootstrap` → `common` → `security` → `docker`
-2. ⬜ Docker daemon configuration (daemon.json, storage driver, logging)
+2. ✅ Docker daemon configuration (daemon.json, storage driver, logging)
 3. ⬜ Migrate Pi-hole to Ansible-managed Docker container
 4. ⬜ Migrate Nginx Proxy Manager to Ansible-managed Docker container
 5. ⬜ Migrate Tailscale to Ansible-managed Docker container
@@ -126,15 +126,48 @@ The goal is to migrate all services from manual Proxmox CT management into Ansib
 11. ⬜ Proxmox role (VM/CT management via API) — optional
 
 
-## Docker phase 1 — daemon configuration & storage driver  
+## Docker role
+
+The `docker` role installs Docker CE from the official repo, deploys `daemon.json` (via `docker_daemon_json` variable), and manages the docker group. It depends on `common` (and transitively on `bootstrap`) via `meta/main.yml`.
+
+To customize daemon config, override `docker_daemon_json` in `group_vars` or `host_vars`. The template uses `to_nice_json` — keys are sorted alphabetically on the host.
+
 ```bash
-# After creating role roles/docker/, set these defaults for proper deployment:
-touch roles/docker/templates/daemon.json        # config (storage, network drivers)
-mkdir -p docs/docker                      # procedure to deploy containers + recovery notes
+# Validate
+yamllint .
+ansible-lint .
+ansible-playbook playbooks/docker.yml --syntax-check
 
-# Run docker playbook in order with bootstrap->common->security first!  
-ansible-playbook playbooks/bootstrap.yml   ansible-playbook playbooks/common.yml  \
-    ansible-playbook playbooks/security.yml ansible-playbook playbooks/docker.yml --check
-```  
+# Dry run
+ansible-playbook playbooks/docker.yml --check --diff
 
-See `docs/` for architecture decisions, storage planning (overlay2/zfs), and migration strategy notes.
+# Apply
+ansible-playbook playbooks/docker.yml
+```
+
+See `docs/` for architecture decisions, storage planning (overlay2/zfs), and migration notes.
+
+## Definition of Done
+
+A task is not complete until all applicable steps have been performed:
+
+1. Review the existing implementation before editing.
+2. Create a concise implementation plan.
+3. Make the smallest necessary changes.
+4. Run `yamllint .`.
+5. Run `ansible-lint .`.
+6. Run the relevant playbook with `--syntax-check`.
+7. Review `git diff`.
+8. Fix all errors caused by the changes.
+9. Report:
+   - changed files;
+   - commands executed;
+   - test results;
+   - known limitations.
+
+Never claim completion when tests were not executed.
+
+If a test cannot be executed, explicitly state:
+- which test was skipped;
+- why it was skipped;
+- the exact command the developer must run.

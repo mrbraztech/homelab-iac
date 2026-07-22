@@ -1,0 +1,90 @@
+---
+- name: Ensure Apache2 is installed
+  ansible.builtin.apt:
+    name: apache2
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Ensure Apache2 is enabled and running
+  ansible.builtin.service:
+    name: apache2
+    enabled: true
+    state: started
+
+- name: Ensure CyberChef directory exists
+  ansible.builtin.file:
+    path: "{{ cyberchef_install_dir }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: "0755"
+
+- name: Check CyberChef version
+  ansible.builtin.stat:
+    path: "{{ cyberchef_install_dir }}/.ansible_version"
+  register: cyberchef_version_file
+
+- name: Get CyberChef release info
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/gchq/CyberChef/releases/tags/v{{ cyberchef_version }}"
+    return_content: true
+  register: cyberchef_release
+  delegate_to: localhost
+  become: false
+  check_mode: false
+  when: not cyberchef_version_file.stat.exists
+
+- name: Download CyberChef
+  ansible.builtin.get_url:
+    url: "{{ (cyberchef_release.content | from_json).assets[0].browser_download_url }}"
+    dest: "/tmp/cyberchef-v{{ cyberchef_version }}.zip"
+    mode: "0644"
+  register: cyberchef_download
+  when: cyberchef_release is not skipped
+  check_mode: false
+
+- name: Clean old CyberChef files
+  ansible.builtin.shell: |
+    find {{ cyberchef_install_dir }} -mindepth 1 -maxdepth 1 ! -name '.ansible_version' -exec rm -rf {} +
+  changed_when: true
+  when: cyberchef_download is not skipped
+
+- name: Extract CyberChef
+  ansible.builtin.unarchive:
+    src: "/tmp/cyberchef-v{{ cyberchef_version }}.zip"
+    dest: "{{ cyberchef_install_dir }}"
+    remote_src: true
+    owner: www-data
+    group: www-data
+  when: cyberchef_download is not skipped
+
+- name: Write CyberChef version marker
+  ansible.builtin.copy:
+    content: "{{ cyberchef_version }}"
+    dest: "{{ cyberchef_install_dir }}/.ansible_version"
+    owner: www-data
+    group: www-data
+    mode: "0644"
+  when: cyberchef_download is not skipped
+
+- name: Remove CyberChef download
+  ansible.builtin.file:
+    path: "/tmp/cyberchef-v{{ cyberchef_version }}.zip"
+    state: absent
+  when: cyberchef_download is not skipped
+
+- name: Deploy CyberChef VirtualHost
+  ansible.builtin.template:
+    src: cyberchef.conf.j2
+    dest: /etc/apache2/sites-available/cyberchef.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Apache2
+
+- name: Enable CyberChef site
+  ansible.builtin.command: a2ensite cyberchef.conf
+  register: cyberchef_a2ensite
+  changed_when: '"already enabled" not in cyberchef_a2ensite.stdout'
+  notify: Restart Apache2

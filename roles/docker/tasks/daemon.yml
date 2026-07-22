@@ -6,11 +6,11 @@
     state: started
 
 - name: Deploy daemon.json
-  ansible.builtin.copy:
+  ansible.builtin.template:
+    src: daemon.json.j2
     dest: /etc/docker/daemon.json
     owner: root
     group: root
     mode: "0644"
-    content: "{{ docker_daemon_json | to_nice_json }}\n"
   notify: Restart Docker
   when: docker_daemon_json | length > 0

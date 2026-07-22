@@ -1,0 +1,13 @@
+<VirtualHost *:{{ cyberchef_listen_port }}>
+    ServerName {{ cyberchef_server_name }}
+
+    DocumentRoot {{ cyberchef_install_dir }}
+
+    <Directory {{ cyberchef_install_dir }}>
+        Options Indexes FollowSymLinks
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+    DirectoryIndex index.html
+</VirtualHost>

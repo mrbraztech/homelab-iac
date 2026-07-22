@@ -1,0 +1,5 @@
+---
+cyberchef_version: "11.2.0"
+cyberchef_install_dir: /var/www/cyberchef
+cyberchef_server_name: chef.omni.corp
+cyberchef_listen_port: 80

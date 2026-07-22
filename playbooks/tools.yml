@@ -1,0 +1,9 @@
+---
+- name: Configure tools host (CyberChef + pgAdmin)
+  hosts: tools
+  become: true
+  gather_facts: true
+
+  roles:
+    - cyberchef
+    - pgadmin
