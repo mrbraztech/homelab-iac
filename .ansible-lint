@@ -8,3 +8,4 @@ exclude_paths:
   - collections/ansible_collections/
   - .tox/
   - tmp/
+  - inventories/lab/host_vars/*/vault.yml
