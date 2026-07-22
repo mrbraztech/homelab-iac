@@ -1,0 +1,7 @@
+---
+- name: Configure NAS host (PostgreSQL + Redis)
+  hosts: nas
+  become: true
+  gather_facts: true
+  roles:
+    - services

@@ -1,0 +1,20 @@
+---
+# PostgreSQL
+services_postgres_image: pgvector/pgvector:pg17
+services_postgres_container_name: postgres
+services_postgres_port: "5432"
+services_postgres_volume_path: /opt/data/postgres
+services_postgres_password: "{{ vault_postgres_password }}"
+
+# Databases to ensure exist
+services_postgres_databases:
+  - immich
+  - nextcloud
+
+# Redis
+services_redis_image: redis:7-alpine
+services_redis_container_name: redis
+services_redis_port: "6379"
+
+# Installation directory
+services_install_dir: /opt/services
