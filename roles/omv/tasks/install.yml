@@ -1,0 +1,63 @@
+---
+- name: Check if OMV is installed
+  ansible.builtin.command: dpkg -l openmediavault
+  register: omv_check
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Install OMV prerequisites
+  ansible.builtin.apt:
+    name:
+      - gnupg
+      - apt-transport-https
+      - curl
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  when: omv_check.rc != 0
+
+- name: Download OMV archive key
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      wget --quiet --output-document=-
+      https://packages.openmediavault.org/public/archive.key
+      | gpg --dearmor --yes
+      --output /usr/share/keyrings/openmediavault-archive-keyring.gpg
+    executable: /bin/bash
+  when: omv_check.rc != 0
+  changed_when: true
+
+- name: Add OMV repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [signed-by=/usr/share/keyrings/openmediavault-archive-keyring.gpg]
+      https://packages.openmediavault.org/public {{ ansible_distribution_release }} main
+    state: present
+    filename: openmediavault
+  when: omv_check.rc != 0
+
+- name: Install openmediavault
+  ansible.builtin.apt:
+    name:
+      - openmediavault-keyring
+      - openmediavault
+    state: present
+    update_cache: true
+    force: true
+    install_recommends: false
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+    APT_LISTCHANGES_FRONTEND: none
+  when: omv_check.rc != 0
+
+- name: Populate OMV database
+  ansible.builtin.command: omv-confdbadm populate
+  when: omv_check.rc != 0
+  changed_when: true
+
+- name: Deploy OMV hosts config
+  ansible.builtin.command: omv-salt deploy run hosts
+  when: omv_check.rc != 0
+  changed_when: true

@@ -1,4 +1,10 @@
 ---
+- name: Import OMV installation tasks
+  ansible.builtin.import_tasks: install.yml
+  tags:
+    - omv
+    - install
+
 - name: Ensure jq is installed
   ansible.builtin.apt:
     name: jq
