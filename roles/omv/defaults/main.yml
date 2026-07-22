@@ -33,8 +33,7 @@ omv_filesystem_uuid: 94b09595-ff37-41b8-878c-6bb94edf0c71
 omv_nfs_client: 192.168.10.0/24
 
 # NFS shares to create (shared folder names)
-omv_nfs_shares:
-  - data
+omv_nfs_shares: []
 
 # SMB shares to create (shared folder names)
 omv_smb_shares: []
