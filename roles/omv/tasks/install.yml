@@ -30,12 +30,14 @@
   changed_when: true
 
 - name: Add OMV repository
-  ansible.builtin.apt_repository:
-    repo: >-
-      deb [signed-by=/usr/share/keyrings/openmediavault-archive-keyring.gpg]
-      https://packages.openmediavault.org/public {{ ansible_distribution_release }} main
+  ansible.builtin.deb822_repository:
+    name: openmediavault
+    types: deb
+    uris: https://packages.openmediavault.org/public
+    suites: "{{ ansible_distribution_release }}"
+    components: main
+    signed_by: /usr/share/keyrings/openmediavault-archive-keyring.gpg
     state: present
-    filename: openmediavault
   when: omv_check.rc != 0
 
 - name: Install openmediavault
