@@ -53,16 +53,19 @@ vault_postgres_password: "your-secure-password"
 **For any new host**, run the bootstrap chain first to create the `ansible` user:
 
 ```bash
-# 1. Bootstrap (creates ansible user, SSH key, sudo)
+# 1. Bootstrap as root (creates ansible user, SSH key, sudo)
 ansible-playbook playbooks/bootstrap.yml --limit <host>
 
-# 2. Update inventory: root → ansible (manual step)
+# 2. Update inventory: change ansible_user from root to ansible
+#    Edit inventories/lab/hosts.yml
 
-# 3. Base roles
+# 3. Run base roles as ansible user
 ansible-playbook playbooks/common.yml --limit <host>
 ansible-playbook playbooks/security.yml --limit <host>
 ansible-playbook playbooks/docker.yml --limit <host>
 ```
+
+**Why bootstrap as root?** The `ansible` user doesn't exist yet. Bootstrap creates it with SSH key, sudo, and docker group. After that, all playbooks run as `ansible` (never root again).
 
 **For NAS specifically**, after the base chain:
 

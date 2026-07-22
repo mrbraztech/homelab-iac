@@ -33,3 +33,12 @@
   when: >
     not ansible_check_mode
     or bootstrap_admin_user in ansible_facts.getent_passwd
+
+- name: Remind to update inventory
+  ansible.builtin.debug:
+    msg:
+      - "User '{{ bootstrap_admin_user }}' created successfully."
+      - "Next step: update inventories/lab/hosts.yml"
+      - "Change ansible_user from 'root' to '{{ bootstrap_admin_user }}' for this host."
+      - "Then run: ansible-playbook playbooks/common.yml --limit {{ inventory_hostname }}"
+  when: ansible_user == "root"
