@@ -15,6 +15,15 @@
     group: "999"
     mode: "0700"
 
+- name: Stop and remove existing containers (migration cleanup)
+  community.docker.docker_container:
+    name: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ services_postgres_container_name }}"
+    - "{{ services_redis_container_name }}"
+  when: services_remove_existing_containers | default(false) | bool
+
 - name: Deploy docker-compose.yml
   ansible.builtin.template:
     src: docker-compose.yml.j2

@@ -57,12 +57,19 @@ ansible-playbook playbooks/bootstrap.yml --limit nas
 ansible-playbook playbooks/common.yml --limit nas
 ansible-playbook playbooks/security.yml --limit nas
 ansible-playbook playbooks/docker.yml --limit nas
+
+# If migrating from existing containers: run migration script FIRST
+./scripts/migrate-postgres.sh
+
+# If fresh install (no existing containers): run playbook directly
 ansible-playbook playbooks/nas.yml
 
 # Subsequent updates
 ansible-playbook playbooks/nas.yml --check --diff
 ansible-playbook playbooks/nas.yml
 ```
+
+**Important**: If containers `postgres` or `redis` already exist on the NAS, you MUST run the migration script first. Running `playbooks/nas.yml` directly will fail with a container name conflict.
 
 ## Migration
 
