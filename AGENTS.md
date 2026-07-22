@@ -124,3 +124,17 @@ The goal is to migrate all services from manual Proxmox CT management into Ansib
 9. ⬜ Migrate Immich to Ansible-managed Docker container
 10. ⬜ NAS role (OpenMediaVault / NFS/SMB mounts)
 11. ⬜ Proxmox role (VM/CT management via API) — optional
+
+
+## Docker phase 1 — daemon configuration & storage driver  
+```bash
+# After creating role roles/docker/, set these defaults for proper deployment:
+touch roles/docker/templates/daemon.json        # config (storage, network drivers)
+mkdir -p docs/docker                      # procedure to deploy containers + recovery notes
+
+# Run docker playbook in order with bootstrap->common->security first!  
+ansible-playbook playbooks/bootstrap.yml   ansible-playbook playbooks/common.yml  \
+    ansible-playbook playbooks/security.yml ansible-playbook playbooks/docker.yml --check
+```  
+
+See `docs/` for architecture decisions, storage planning (overlay2/zfs), and migration strategy notes.

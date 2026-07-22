@@ -29,3 +29,6 @@ ignore: |
   .git/
   .ansible/
   collections/ansible_collections/
+  *.md
+  */*.md
+  /docs

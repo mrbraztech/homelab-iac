@@ -304,6 +304,28 @@ Topics include:
 
 ---
 
+# Local Environemnt Setup
+
+` sudo apt install -y git openssh-client python3 python3-pip  python3-venv pipx `
+
+`pipx ensurepath`
+
+`pipx install ansible`
+
+`pipx install ansible-lint`
+
+`pipx install yamllint`
+
+`pipx install pre-commit`
+
+`ansible-galaxy collection install -r collections/requirements.yml`
+
+# Testing Environment
+
+`ansible-inventory --graph`
+`ansible lab -m ping`
+`ansible-playbook playbooks/bootstrap.yml --syntax-check`
+
 # License
 
 This repository is intended for personal use and learning purposes.
