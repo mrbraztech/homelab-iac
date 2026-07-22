@@ -34,6 +34,23 @@
     not ansible_check_mode
     or bootstrap_admin_user in ansible_facts.getent_passwd
 
+- name: Check for AllowGroups in sshd config
+  ansible.builtin.shell:
+    cmd: set -o pipefail && grep -r "^AllowGroups" /etc/ssh/sshd_config /etc/ssh/sshd_config.d/ 2>/dev/null | head -1
+    executable: /bin/bash
+  register: bootstrap_allowgroups
+  changed_when: false
+  check_mode: false
+
+- name: Add user to AllowGroups (OMV compat)
+  ansible.builtin.user:
+    name: "{{ bootstrap_admin_user }}"
+    groups: "{{ bootstrap_allowgroups.stdout | regex_search('AllowGroups\\s+(\\S+)', '\\1') | first }}"
+    append: true
+  when:
+    - bootstrap_allowgroups.stdout | length > 0
+    - bootstrap_admin_user not in bootstrap_allowgroups.stdout
+
 - name: Remind to update inventory
   ansible.builtin.debug:
     msg:
