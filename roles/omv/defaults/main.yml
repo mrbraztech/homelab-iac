@@ -1,0 +1,43 @@
+---
+# OMV shared folders (existing)
+omv_shared_folders:
+  - name: data
+    uuid: 9e955589-0f4d-4c30-af09-669f342479d1
+    mntentref: 94b09595-ff37-41b8-878c-6bb94edf0c71
+    reldirpath: data/
+  - name: backup
+    uuid: 689db862-43e9-4e12-b4a5-09917c16671d
+    mntentref: 94b09595-ff37-41b8-878c-6bb94edf0c71
+    reldirpath: backup/
+  - name: surveillance
+    uuid: afc462da-01a4-4815-a8ac-1a33f4827f7f
+    mntentref: 94b09595-ff37-41b8-878c-6bb94edf0c71
+    reldirpath: surveillance/
+  - name: nextcloud
+    uuid: 08797b47-183c-4c7f-a38a-d5d9bd234f65
+    mntentref: 94b09595-ff37-41b8-878c-6bb94edf0c71
+    reldirpath: nextcloud/
+  - name: media
+    uuid: f3d87560-234f-4829-ae60-4232bb70eda8
+    mntentref: 94b09595-ff37-41b8-878c-6bb94edf0c71
+    reldirpath: media/
+  - name: catholic-library
+    uuid: 65107a0d-1e8c-45df-93c2-f59cc44fb74f
+    mntentref: 94b09595-ff37-41b8-878c-6bb94edf0c71
+    reldirpath: catholic-library/
+
+# Filesystem mount UUID
+omv_filesystem_uuid: 94b09595-ff37-41b8-878c-6bb94edf0c71
+
+# NFS client network
+omv_nfs_client: 192.168.10.0/24
+
+# NFS shares to create (shared folder names)
+omv_nfs_shares:
+  - data
+
+# SMB shares to create (shared folder names)
+omv_smb_shares: []
+
+# OMV RPC special UUID for new resources
+omv_new_resource_uuid: "fa4b1c66-ef79-11e5-87a0-0002b3a176b4"

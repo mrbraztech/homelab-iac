@@ -1,0 +1,86 @@
+---
+- name: Ensure jq is installed
+  ansible.builtin.apt:
+    name: jq
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Get existing NFS shares
+  ansible.builtin.shell:
+    cmd: set -o pipefail && omv-confdbadm read conf.service.nfs.share 2>/dev/null | jq -r '.[].sharedfolderref'
+    executable: /bin/bash
+  register: omv_existing_nfs
+  changed_when: false
+  check_mode: false
+
+- name: Parse existing NFS shared folder refs
+  ansible.builtin.set_fact:
+    omv_existing_nfs_refs: "{{ omv_existing_nfs.stdout_lines | default([]) }}"
+
+- name: Get shared folder UUID by name
+  ansible.builtin.shell:
+    cmd: >-
+      set -o pipefail && omv-confdbadm read conf.system.sharedfolder 2>/dev/null
+      | jq -r '.[] | select(.name == "{{ item }}") | .uuid'
+    executable: /bin/bash
+  register: omv_folder_uuids
+  loop: "{{ omv_nfs_shares }}"
+  changed_when: false
+  check_mode: false
+
+- name: Create NFS share for missing folders
+  ansible.builtin.command: >-
+    omv-rpc -u admin 'NFS' 'setShare' '{{
+      {
+        "uuid": omv_new_resource_uuid,
+        "sharedfolderref": item.item,
+        "mntentref": omv_filesystem_uuid,
+        "client": omv_nfs_client,
+        "options": "rw",
+        "extraoptions": "insecure,no_subtree_check,no_root_squash"
+      } | to_json }}'
+  loop: "{{ omv_folder_uuids.results }}"
+  when:
+    - item.item not in omv_existing_nfs_refs
+    - item.stdout | length > 0
+  changed_when: true
+  notify: Apply OMV changes
+
+- name: Get existing SMB shares
+  ansible.builtin.shell:
+    cmd: set -o pipefail && omv-confdbadm read conf.service.smb.share 2>/dev/null | jq -r '.[].sharedfolderref'
+    executable: /bin/bash
+  register: omv_existing_smb
+  changed_when: false
+  check_mode: false
+
+- name: Parse existing SMB shared folder refs
+  ansible.builtin.set_fact:
+    omv_existing_smb_refs: "{{ omv_existing_smb.stdout_lines | default([]) }}"
+
+- name: Create SMB share for missing folders
+  ansible.builtin.command: >-
+    omv-rpc -u admin 'SMB' 'setShare' '{{
+      {
+        "uuid": omv_new_resource_uuid,
+        "sharedfolderref": item.item,
+        "comment": "",
+        "enabled": true,
+        "guest": "no",
+        "hidefiles": "no",
+        "browsable": "yes",
+        "readonly": "no",
+        "inheritpermissions": "yes",
+        "recyclebin": "no",
+        "recyclebinversions": "no",
+        "homes": "no"
+      } | to_json }}'
+  loop: "{{ omv_folder_uuids.results }}"
+  when:
+    - omv_smb_shares | length > 0
+    - item.item not in omv_existing_smb_refs
+    - item.item in omv_smb_shares
+    - item.stdout | length > 0
+  changed_when: true
+  notify: Apply OMV changes

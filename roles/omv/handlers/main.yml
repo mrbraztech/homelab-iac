@@ -1,0 +1,5 @@
+---
+- name: Apply OMV configuration changes
+  ansible.builtin.command: omv-salt deploy run fstab
+  changed_when: true
+  listen: Apply OMV changes

@@ -1,0 +1,7 @@
+---
+- name: Configure OMV storage (SMB/NFS)
+  hosts: nas
+  become: true
+  gather_facts: true
+  roles:
+    - omv
