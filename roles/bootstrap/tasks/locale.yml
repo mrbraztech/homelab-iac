@@ -1,0 +1,21 @@
+---
+- name: Install locale package
+  ansible.builtin.apt:
+    name: locales
+    state: present
+
+- name: Ensure locale is generated
+  community.general.locale_gen:
+    name: "{{ bootstrap_locale }}"
+    state: present
+
+- name: Set default locale
+  ansible.builtin.copy:
+    dest: /etc/default/locale
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      LANG={{ bootstrap_locale_language }}
+      LANGUAGE={{ bootstrap_locale_language }}
+      LC_ALL={{ bootstrap_locale_language }}

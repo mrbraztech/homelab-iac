@@ -5,8 +5,26 @@
     - bootstrap
     - packages
 
+- name: Configure locale
+  ansible.builtin.import_tasks: locale.yml
+  tags:
+    - bootstrap
+    - locale
+
+- name: Configure timezone
+  ansible.builtin.import_tasks: timezone.yml
+  tags:
+    - bootstrap
+    - timezone
+
 - name: Configure administrative user
   ansible.builtin.import_tasks: user.yml
   tags:
     - bootstrap
     - user
+
+- name: Configure SSH hardening
+  ansible.builtin.import_tasks: ssh.yml
+  tags:
+    - bootstrap
+    - ssh

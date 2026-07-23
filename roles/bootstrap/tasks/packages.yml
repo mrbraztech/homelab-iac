@@ -4,7 +4,12 @@
     update_cache: true
     cache_valid_time: 3600
 
-- name: Install minimum bootstrap packages
+- name: Upgrade installed packages
+  ansible.builtin.apt:
+    upgrade: safe
+  when: bootstrap_upgrade_packages
+
+- name: Install bootstrap packages
   ansible.builtin.apt:
     name: "{{ bootstrap_packages }}"
     state: present

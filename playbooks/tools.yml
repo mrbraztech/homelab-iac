@@ -1,9 +1,10 @@
 ---
-- name: Configure tools host (CyberChef + pgAdmin)
+- name: Configure tools host
   hosts: tools
   become: true
   gather_facts: true
-
   roles:
+    - bootstrap
+    - docker
     - cyberchef
     - pgadmin

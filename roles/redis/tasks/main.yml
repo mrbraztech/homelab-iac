@@ -1,0 +1,42 @@
+---
+- name: Ensure installation directory exists
+  ansible.builtin.file:
+    path: "{{ redis_install_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Check if Redis container already exists
+  community.docker.docker_container_info:
+    name: "{{ redis_container_name }}"
+  register: redis_existing_container
+
+- name: Set Redis container running fact
+  ansible.builtin.set_fact:
+    redis_container_running: >-
+      {{ redis_existing_container.exists
+         and redis_existing_container.container.State.Status == 'running' }}
+
+- name: Stop and remove existing Redis container (migration cleanup)
+  community.docker.docker_container:
+    name: "{{ redis_container_name }}"
+    state: absent
+  when:
+    - redis_remove_existing_containers | default(false) | bool
+    - not redis_container_running
+
+- name: Deploy docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ redis_install_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Redis
+
+- name: Ensure Redis container is running
+  community.docker.docker_compose_v2:
+    project_src: "{{ redis_install_dir }}"
+    state: present
+  when: not redis_container_running

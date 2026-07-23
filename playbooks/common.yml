@@ -1,8 +1,0 @@
----
-- name: Apply common homelab configuration
-  hosts: lab
-  become: true
-  gather_facts: true
-
-  roles:
-    - common

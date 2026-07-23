@@ -1,14 +1,44 @@
 ---
+# User
 bootstrap_admin_user: ansible
-
 bootstrap_admin_groups:
   - sudo
-
 bootstrap_admin_shell: /bin/bash
-
-# Paste public key here or override in inventory.
 bootstrap_admin_authorized_keys: []
 
+# Packages
 bootstrap_packages:
   - sudo
   - openssh-server
+  - bash-completion
+  - ca-certificates
+  - curl
+  - git
+  - htop
+  - jq
+  - nano
+  - rsync
+  - unzip
+  - vim
+  - wget
+
+bootstrap_upgrade_packages: false
+
+# Locale
+bootstrap_locale: en_US.UTF-8
+bootstrap_locale_language: en_US.UTF-8
+
+# Timezone
+bootstrap_timezone: America/Sao_Paulo
+
+# Hostname
+bootstrap_manage_hostname: false
+bootstrap_hostname: ""
+
+# SSH
+bootstrap_ssh_port: 22
+bootstrap_ssh_permit_root_login: "prohibit-password"
+bootstrap_ssh_password_authentication: false
+bootstrap_ssh_pubkey_authentication: true
+bootstrap_ssh_x11_forwarding: false
+bootstrap_ssh_max_auth_tries: 3

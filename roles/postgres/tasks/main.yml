@@ -1,0 +1,56 @@
+---
+- name: Ensure installation directory exists
+  ansible.builtin.file:
+    path: "{{ postgres_install_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Ensure PostgreSQL data directory exists
+  ansible.builtin.file:
+    path: "{{ postgres_volume_path }}"
+    state: directory
+    owner: "999"
+    group: "999"
+    mode: "0700"
+
+- name: Check if PostgreSQL container already exists
+  community.docker.docker_container_info:
+    name: "{{ postgres_container_name }}"
+  register: postgres_existing_container
+
+- name: Set PostgreSQL container running fact
+  ansible.builtin.set_fact:
+    postgres_container_running: >-
+      {{ postgres_existing_container.exists
+         and postgres_existing_container.container.State.Status == 'running' }}
+
+- name: Stop and remove existing PostgreSQL container (migration cleanup)
+  community.docker.docker_container:
+    name: "{{ postgres_container_name }}"
+    state: absent
+  when:
+    - postgres_remove_existing_containers | default(false) | bool
+    - not postgres_container_running
+
+- name: Deploy docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ postgres_install_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart PostgreSQL
+
+- name: Ensure PostgreSQL container is running
+  community.docker.docker_compose_v2:
+    project_src: "{{ postgres_install_dir }}"
+    state: present
+  when: not postgres_container_running
+
+- name: Wait for PostgreSQL to be ready
+  ansible.builtin.wait_for:
+    port: "{{ postgres_port }}"
+    delay: 5
+    timeout: 30

@@ -1,7 +1,0 @@
----
-security_ssh_port: 22
-security_ssh_permit_root_login: "prohibit-password"
-security_ssh_password_authentication: false
-security_ssh_pubkey_authentication: true
-security_ssh_x11_forwarding: false
-security_ssh_max_auth_tries: 3

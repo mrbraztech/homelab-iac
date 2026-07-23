@@ -1,5 +1,5 @@
 ---
-common_timezone: America/Sao_Paulo
+bootstrap_timezone: America/Sao_Paulo
 
 bootstrap_admin_user: ansible
 
@@ -10,5 +10,5 @@ docker_users:
   - "{{ bootstrap_admin_user }}"
 
 # Keep enabled on first provision.
-security_ssh_password_authentication: true
-security_ssh_permit_root_login: "yes"
+bootstrap_ssh_password_authentication: true
+bootstrap_ssh_permit_root_login: "yes"

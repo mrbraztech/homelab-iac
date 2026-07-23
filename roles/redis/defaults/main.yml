@@ -1,0 +1,6 @@
+---
+redis_image: redis:7-alpine
+redis_container_name: redis
+redis_port: "6379"
+
+redis_install_dir: /opt/redis

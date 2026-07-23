@@ -1,0 +1,10 @@
+---
+postgres_image: pgvector/pgvector:pg17
+postgres_container_name: postgres
+postgres_port: "5432"
+postgres_volume_path: /opt/data/postgres
+postgres_password: "{{ vault_postgres_password }}"
+
+postgres_install_dir: /opt/postgres
+
+postgres_remove_existing_containers: false

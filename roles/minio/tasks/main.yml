@@ -1,0 +1,85 @@
+---
+- name: Ensure installation directory exists
+  ansible.builtin.file:
+    path: "{{ minio_install_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Ensure MinIO data directory exists
+  ansible.builtin.file:
+    path: "{{ minio_data_path }}"
+    state: directory
+    owner: "1000"
+    group: "1000"
+    mode: "0700"
+
+- name: Ensure MinIO certs directory exists
+  ansible.builtin.file:
+    path: "{{ minio_certs_path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Check if AIStor container already exists
+  community.docker.docker_container_info:
+    name: "{{ minio_container_name }}"
+  register: minio_existing_container
+
+- name: Set AIStor container running fact
+  ansible.builtin.set_fact:
+    minio_container_running: >-
+      {{ minio_existing_container.exists
+         and minio_existing_container.container.State.Status == 'running' }}
+
+- name: Deploy MinIO license file
+  ansible.builtin.copy:
+    content: "{{ minio_license_key }}"
+    dest: "{{ minio_license_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart AIStor
+
+- name: Deploy docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ minio_install_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart AIStor
+
+- name: Ensure AIStor container is running
+  community.docker.docker_compose_v2:
+    project_src: "{{ minio_install_dir }}"
+    state: present
+  when: not minio_container_running
+
+- name: Wait for AIStor API to be ready
+  ansible.builtin.wait_for:
+    port: "{{ minio_api_port }}"
+    delay: 5
+    timeout: 30
+
+- name: Install AIStor client (mc)
+  ansible.builtin.get_url:
+    url: https://dl.min.io/aistor/mc/release/linux-amd64/mc
+    dest: /usr/local/bin/mc
+    mode: "0755"
+
+- name: Configure mc alias
+  ansible.builtin.command: >-
+    mc alias set local
+    http://127.0.0.1:{{ minio_api_port }}
+    {{ minio_access_key }}
+    {{ minio_secret_key }}
+  register: minio_mc_alias
+  changed_when: "'added' in minio_mc_alias.stdout or 'Updated' in minio_mc_alias.stdout"
+
+- name: Create bucket if it does not exist
+  ansible.builtin.command: mc mb --ignore-existing local/{{ minio_bucket }}
+  register: minio_mc_bucket
+  changed_when: "'created' in minio_mc_bucket.stdout"

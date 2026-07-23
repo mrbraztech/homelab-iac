@@ -57,5 +57,4 @@
       - "User '{{ bootstrap_admin_user }}' created successfully."
       - "Next step: update inventories/lab/hosts.yml"
       - "Change ansible_user from 'root' to '{{ bootstrap_admin_user }}' for this host."
-      - "Then run: ansible-playbook playbooks/common.yml --limit {{ inventory_hostname }}"
   when: ansible_user == "root"

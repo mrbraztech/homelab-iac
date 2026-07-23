@@ -1,0 +1,25 @@
+---
+- name: Ensure SSH configuration directory exists
+  ansible.builtin.file:
+    path: /etc/ssh/sshd_config.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install homelab SSH configuration
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/99-homelab.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      Port {{ bootstrap_ssh_port }}
+      PermitRootLogin {{ bootstrap_ssh_permit_root_login }}
+      PasswordAuthentication {{ bootstrap_ssh_password_authentication | ternary('yes', 'no') }}
+      PubkeyAuthentication {{ bootstrap_ssh_pubkey_authentication | ternary('yes', 'no') }}
+      X11Forwarding {{ bootstrap_ssh_x11_forwarding | ternary('yes', 'no') }}
+      MaxAuthTries {{ bootstrap_ssh_max_auth_tries }}
+  notify:
+    - Validate SSH configuration
+    - Restart SSH

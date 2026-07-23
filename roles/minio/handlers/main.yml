@@ -1,0 +1,5 @@
+---
+- name: Restart AIStor
+  community.docker.docker_compose_v2:
+    project_src: "{{ minio_install_dir }}"
+    state: restarted

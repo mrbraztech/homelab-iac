@@ -1,0 +1,17 @@
+---
+services:
+  aistor-server:
+    image: {{ minio_image }}
+    container_name: {{ minio_container_name }}
+    restart: unless-stopped
+    ports:
+      - "{{ minio_api_port }}:9000"
+      - "{{ minio_console_port }}:9001"
+    environment:
+      MINIO_ROOT_USER: {{ minio_access_key }}
+      MINIO_ROOT_PASSWORD: {{ minio_secret_key }}
+    volumes:
+      - {{ minio_data_path }}:/mnt/data
+      - {{ minio_license_path }}:/minio.license
+      - {{ minio_certs_path }}:/etc/minio/certs
+    command: server /mnt/data --console-address ":9001" --license /minio.license

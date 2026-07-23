@@ -1,7 +1,77 @@
 ---
-- name: Configure NAS host (PostgreSQL + Redis)
+- name: Configure NAS host
   hosts: nas
   become: true
   gather_facts: true
   roles:
-    - services
+    - bootstrap
+    - docker
+    - postgres
+    - redis
+    - omv
+    - minio
+
+- name: Configure PostgreSQL databases
+  hosts: nas
+  become: true
+  gather_facts: false
+
+  vars:
+    postgres_setup_users:
+      - name: immich
+        password: "{{ vault_immich_password }}"
+      - name: nextcloud
+        password: "{{ vault_nextcloud_password }}"
+
+    postgres_setup_databases:
+      - name: immich
+        owner: immich
+      - name: nextcloud
+        owner: nextcloud
+
+    postgres_setup_extensions:
+      - database: immich
+        extensions:
+          - vector
+
+  tasks:
+    - name: Install PostgreSQL client library
+      ansible.builtin.apt:
+        name: python3-psycopg2
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Ensure database users exist
+      community.postgresql.postgresql_user:
+        name: "{{ item.name }}"
+        password: "{{ item.password }}"
+        login_host: "127.0.0.1"
+        login_port: "{{ postgres_port }}"
+        login_user: postgres
+        login_password: "{{ postgres_password }}"
+        state: present
+      loop: "{{ postgres_setup_users }}"
+
+    - name: Ensure databases exist
+      community.postgresql.postgresql_db:
+        name: "{{ item.name }}"
+        owner: "{{ item.owner }}"
+        login_host: "127.0.0.1"
+        login_port: "{{ postgres_port }}"
+        login_user: postgres
+        login_password: "{{ postgres_password }}"
+        state: present
+      loop: "{{ postgres_setup_databases }}"
+
+    - name: Ensure extensions are installed
+      community.postgresql.postgresql_ext:
+        name: "{{ item.1 }}"
+        db: "{{ item.0.name }}"
+        login_host: "127.0.0.1"
+        login_port: "{{ postgres_port }}"
+        login_user: postgres
+        login_password: "{{ postgres_password }}"
+        state: present
+      loop: "{{ postgres_setup_extensions | subelements('extensions') }}"
+      when: postgres_setup_extensions | length > 0

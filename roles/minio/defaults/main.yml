@@ -1,0 +1,13 @@
+---
+minio_image: quay.io/minio/aistor/minio:latest
+minio_container_name: aistor-server
+minio_api_port: "9000"
+minio_console_port: "9001"
+minio_data_path: /opt/data/minio
+minio_certs_path: /opt/minio/certs
+minio_license_path: /opt/minio/minio.license
+minio_install_dir: /opt/minio
+minio_access_key: "{{ vault_minio_access_key }}"
+minio_secret_key: "{{ vault_minio_secret_key }}"
+minio_license_key: "{{ vault_minio_license_key }}"
+minio_bucket: proxmox-ct-state

@@ -14,10 +14,15 @@
             "context": 65536,
             "output": 8192
           }
+        },
+        "gpt-oss:20b":{
+          "name": "GPT OSS Local",
+          "limit": {
+            "context": 65536,
+            "output": 8192
+          }
         }
       }
     }
-  },
-  "model": "ollama/qwen3.5:latest",
-  "small_model": "ollama/qwen3.5:latest"
+  }
 }

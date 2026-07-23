@@ -1,8 +1,0 @@
----
-- name: Apply security hardening
-  hosts: lab
-  become: true
-  gather_facts: true
-
-  roles:
-    - security
