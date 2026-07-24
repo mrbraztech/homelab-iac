@@ -1,0 +1,20 @@
+services:
+  frigate:
+    image: "{{ frigate_image }}"
+    container_name: "{{ frigate_container_name }}"
+    restart: unless-stopped
+    privileged: true
+    shm_size: "256mb"
+    ports:
+      - "{{ frigate_http_port }}:5000/tcp"
+      - "{{ frigate_rtmp_port }}:8554/tcp"
+      - "{{ frigate_webrtc_port }}:8555/tcp"
+      - "{{ frigate_webrtc_port }}:8555/udp"
+      - "8971:8971/tcp"
+    volumes:
+      - {{ frigate_config_path }}:/config
+      - {{ frigate_data_path }}:/media/frigate
+      - type: tmpfs
+        target: /tmp/cache
+        tmpfs:
+          size: 1073741824

@@ -1,0 +1,9 @@
+---
+frigate_image: ghcr.io/blakeblackshear/frigate:0.17.1
+frigate_container_name: frigate
+frigate_http_port: "5000"
+frigate_rtmp_port: "8554"
+frigate_webrtc_port: "8555"
+frigate_data_path: /opt/frigate/storage
+frigate_config_path: /opt/frigate/config
+frigate_install_dir: /opt/frigate

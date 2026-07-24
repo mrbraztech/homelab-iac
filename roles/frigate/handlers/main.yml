@@ -1,0 +1,6 @@
+---
+- name: Restart Frigate
+  community.docker.docker_compose_v2:
+    project_src: "{{ frigate_install_dir }}"
+    state: restarted
+  listen: Restart Frigate
