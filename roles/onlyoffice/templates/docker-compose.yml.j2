@@ -1,0 +1,10 @@
+services:
+  onlyoffice:
+    image: "{{ onlyoffice_image }}"
+    container_name: "{{ onlyoffice_container_name }}"
+    restart: unless-stopped
+    ports:
+      - "{{ onlyoffice_http_port }}:80/tcp"
+    volumes:
+      - {{ onlyoffice_data_path }}:/var/www/onlyoffice/Data
+      - {{ onlyoffice_log_path }}:/var/log/onlyoffice
