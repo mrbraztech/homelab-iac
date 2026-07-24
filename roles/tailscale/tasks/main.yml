@@ -1,0 +1,42 @@
+---
+- name: Ensure installation directory exists
+  ansible.builtin.file:
+    path: "{{ tailscale_install_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Ensure Tailscale state directory exists
+  ansible.builtin.file:
+    path: "{{ tailscale_data_path }}"
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: "0700"
+
+- name: Check if Tailscale container already exists
+  community.docker.docker_container_info:
+    name: "{{ tailscale_container_name }}"
+  register: tailscale_existing_container
+
+- name: Set Tailscale container running fact
+  ansible.builtin.set_fact:
+    tailscale_container_running: >-
+      {{ tailscale_existing_container.exists
+         and tailscale_existing_container.container.State.Status == 'running' }}
+
+- name: Deploy docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ tailscale_install_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Tailscale
+
+- name: Ensure Tailscale container is running
+  community.docker.docker_compose_v2:
+    project_src: "{{ tailscale_install_dir }}"
+    state: present
+  when: not tailscale_container_running

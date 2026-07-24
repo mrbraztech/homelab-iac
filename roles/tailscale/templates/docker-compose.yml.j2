@@ -1,0 +1,17 @@
+services:
+  tailscale:
+    image: "{{ tailscale_image }}"
+    container_name: "{{ tailscale_container_name }}"
+    restart: unless-stopped
+    hostname: "{{ tailscale_hostname }}"
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      TS_AUTHKEY: "{{ tailscale_auth_key }}"
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_EXTRA_ARGS: "{{ tailscale_extra_args }}"
+    volumes:
+      - {{ tailscale_data_path }}:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
