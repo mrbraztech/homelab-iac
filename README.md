@@ -206,6 +206,10 @@ State stored in MinIO S3-compatible storage:
 | Storage nas-catholic-library | — | — | `storage.tf` |
 | Backup job monthly | — | — | `backup.tf` |
 
+### SSH user
+
+All CTs include a `user_account` block that injects the SSH public key from `var.ssh_public_key` during initialization. The `ansible` user is then created by the `bootstrap` role on first Ansible run.
+
 ### Common commands
 
 ```bash
