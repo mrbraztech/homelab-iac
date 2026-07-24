@@ -1,0 +1,11 @@
+---
+ninerouter_image: decolua/9router:latest
+ninerouter_container_name: 9router
+ninerouter_port: "20128"
+ninerouter_data_path: /opt/9router/data
+ninerouter_install_dir: /opt/9router
+ninerouter_headroom_image: ghcr.io/chopratejas/headroom:latest
+ninerouter_headroom_container_name: headroom
+ninerouter_headroom_port: "8787"
+ninerouter_jwt_secret: change-me-to-a-long-random-secret
+ninerouter_initial_password: change-me

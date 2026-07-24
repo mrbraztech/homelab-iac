@@ -1,0 +1,5 @@
+---
+- name: Restart Nginx Proxy Manager
+  community.docker.docker_compose_v2:
+    project_src: "{{ nginx_proxy_manager_install_dir }}"
+    state: restarted

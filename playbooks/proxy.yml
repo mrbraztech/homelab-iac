@@ -1,0 +1,9 @@
+---
+- name: Configure proxy host
+  hosts: proxy
+  become: true
+  gather_facts: true
+  roles:
+    - bootstrap
+    - docker
+    - nginx_proxy_manager

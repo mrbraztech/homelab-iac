@@ -36,7 +36,10 @@
 
 - name: Check for AllowGroups in sshd config
   ansible.builtin.shell:
-    cmd: set -o pipefail && grep -r "^AllowGroups" /etc/ssh/sshd_config /etc/ssh/sshd_config.d/ 2>/dev/null | head -1
+    cmd: >-
+      set -o pipefail &&
+      grep -r "^AllowGroups" /etc/ssh/sshd_config /etc/ssh/sshd_config.d/
+      2>/dev/null | head -1 || true
     executable: /bin/bash
   register: bootstrap_allowgroups
   changed_when: false

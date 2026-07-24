@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Ansible IaC repo managing Debian homelab servers. Single inventory (`lab`), base roles (`bootstrap`, `docker`), service roles (`postgres`, `redis`, `omv`, `cyberchef`, `pgadmin`), playbooks orchestrate roles only.
+Ansible IaC repo managing Debian homelab servers. Single inventory (`lab`), base roles (`bootstrap`, `docker`), service roles (`postgres`, `redis`, `omv`, `cyberchef`, `pgadmin`, `ninerouter`), playbooks orchestrate roles only.
 
 ---
 
@@ -24,6 +24,12 @@ ansible-playbook playbooks/nas.yml --limit <host> --check --diff
 
 # Tools (bootstrap + docker + cyberchef + pgadmin)
 ansible-playbook playbooks/tools.yml --limit <host>
+
+# 9Router (bootstrap + docker + 9router + headroom)
+ansible-playbook playbooks/9router.yml --limit <host>
+
+# Proxy (bootstrap + docker + nginx-proxy-manager)
+ansible-playbook playbooks/proxy.yml --limit <host>
 
 # Check all hosts
 ansible-playbook playbooks/check.yml
@@ -52,8 +58,12 @@ Required collections: `community.general`, `community.docker`, `community.postgr
 - `roles/omv/` — OpenMediaVault install, NFS/SMB share management
 - `roles/cyberchef/` — CyberChef container
 - `roles/pgadmin/` — pgAdmin container
+- `roles/ninerouter/` — 9Router AI proxy + Headroom sidecar
+- `roles/nginx_proxy_manager/` — Nginx Proxy Manager reverse proxy
 - `playbooks/nas.yml` — NAS host setup + PostgreSQL DBs/extensions
 - `playbooks/tools.yml` — Tools host setup
+- `playbooks/9router.yml` — 9Router host setup
+- `playbooks/proxy.yml` — Proxy host setup
 - `playbooks/check.yml` — Host diagnostics
 - `ansible.cfg` — defaults to `inventories/lab/hosts.yml`, enables `become=True` and SSH pipelining
 
@@ -67,6 +77,7 @@ Role dependency chain: `bootstrap` -> `docker`.
 - **Variables**: prefix with role name, e.g. `bootstrap_timezone`, `bootstrap_admin_user`, `docker_users`
 - **Variable defaults**: use `defaults/main.yml` for overridable values; `vars/` only for fixed values
 - **Roles**: one role per service, never generic directories grouping multiple services (e.g. `roles/services/` is forbidden; use `roles/postgres/`, `roles/redis/`, etc.)
+- **Role names**: must match `^[a-z][a-z0-9_]*$` (ansible-lint rule). If a service name starts with a digit (e.g. `9router`), use a descriptive alias without the digit (e.g. `ninerouter`). The role directory, variable prefixes, and task/handler names must all use this alias consistently. Display names in templates and descriptions can use the original service name.
 - **YAML**: 2-space indent, LF endings, truthy values are `"true"` / `"false"` (not `yes`/`no`)
 - **Max line length**: 120 characters
 - **Task names**: descriptive, single responsibility
@@ -111,6 +122,7 @@ Never commit credentials, SSH keys, vault passwords, or `.env` files. The `.giti
 | Frigate | NVR / AI object detection |
 | Nextcloud + OnlyOffice | File sync + collaborative editing |
 | Immich | Photo/video backup and management |
+| 9Router | AI proxy + token saver (Claude/GPT/Gemini) |
 
 ### Migration strategy
 

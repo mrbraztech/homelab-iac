@@ -30,6 +30,9 @@ venv/
 .vscode/
 *.swp
 
+# OpenCode config (contains API keys)
+opencode.json
+
 # Operating systems
 .DS_Store
 Thumbs.db
