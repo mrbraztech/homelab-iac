@@ -8,7 +8,7 @@ resource "proxmox_virtual_environment_container" "ai_rag" {
   timeout_delete = 60
 
   features {
-    mount = ["nfs"]
+    mount   = ["nfs"]
     nesting = true
   }
 
@@ -20,6 +20,10 @@ resource "proxmox_virtual_environment_container" "ai_rag" {
         address = "192.168.10.18/24"
         gateway = "192.168.10.1"
       }
+    }
+
+    user_account {
+      keys = [var.ssh_public_key]
     }
   }
 

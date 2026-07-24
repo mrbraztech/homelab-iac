@@ -21,6 +21,10 @@ resource "proxmox_virtual_environment_container" "vpn" {
         gateway = "192.168.10.1"
       }
     }
+
+    user_account {
+      keys = [var.ssh_public_key]
+    }
   }
 
   cpu {
