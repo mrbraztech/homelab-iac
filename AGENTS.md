@@ -126,21 +126,7 @@ Never commit credentials, SSH keys, vault passwords, or `.env` files. The `.giti
 
 ### Migration strategy
 
-The goal is to migrate all services from manual Proxmox CT management into Ansible-managed infrastructure, enabling full disaster recovery via playbooks. Migration will be incremental — one service at a time — while keeping the existing homelab operational.
-
-### Roadmap
-
-1. ✅ Base roles: `bootstrap` → `docker`
-2. ✅ Docker daemon configuration (daemon.json, storage driver, logging)
-3. ⬜ Migrate Pi-hole to Ansible-managed Docker container
-4. ⬜ Migrate Nginx Proxy Manager to Ansible-managed Docker container
-5. ⬜ Migrate Tailscale to Ansible-managed Docker container
-6. ⬜ Migrate Omada Controller to Ansible-managed Docker container
-7. ⬜ Migrate Frigate to Ansible-managed Docker container
-8. ⬜ Migrate Nextcloud + OnlyOffice to Ansible-managed Docker container
-9. ⬜ Migrate Immich to Ansible-managed Docker container
-10. ✅ NAS role (OpenMediaVault / NFS/SMB mounts)
-11. ⬜ Proxmox role (VM/CT management via API) — optional
+The goal is to migrate all services from manual Proxmox CT management into Terraform-managed infrastructure, enabling full disaster recovery via code. Migration will be incremental — one service at a time — while keeping the existing homelab operational.
 
 
 ## Docker role
