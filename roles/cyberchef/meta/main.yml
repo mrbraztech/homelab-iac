@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  role_name: cyberchef
+  description: CyberChef web application
+  author: braz
+  license: MIT
+  min_ansible_version: "2.17"
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+
+dependencies:
+  - role: docker
