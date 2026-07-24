@@ -1,0 +1,10 @@
+---
+pihole_image: pihole/pihole:latest
+pihole_container_name: pihole
+pihole_http_port: "80"
+pihole_dns_port: "53"
+pihole_https_port: "443"
+pihole_data_path: /opt/pihole/data
+pihole_install_dir: /opt/pihole
+pihole_password: "{{ vault_pihole_password }}"
+pihole_dns_upstream: "1.1.1.1"

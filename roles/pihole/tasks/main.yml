@@ -1,0 +1,48 @@
+---
+- name: Ensure installation directory exists
+  ansible.builtin.file:
+    path: "{{ pihole_install_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Ensure Pi-hole data directory exists
+  ansible.builtin.file:
+    path: "{{ pihole_data_path }}"
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: "0755"
+
+- name: Check if Pi-hole container already exists
+  community.docker.docker_container_info:
+    name: "{{ pihole_container_name }}"
+  register: pihole_existing_container
+
+- name: Set Pi-hole container running fact
+  ansible.builtin.set_fact:
+    pihole_container_running: >-
+      {{ pihole_existing_container.exists
+         and pihole_existing_container.container.State.Status == 'running' }}
+
+- name: Deploy docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ pihole_install_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Pi-hole
+
+- name: Ensure Pi-hole container is running
+  community.docker.docker_compose_v2:
+    project_src: "{{ pihole_install_dir }}"
+    state: present
+  when: not pihole_container_running
+
+- name: Wait for Pi-hole to be ready
+  ansible.builtin.wait_for:
+    port: "{{ pihole_http_port }}"
+    delay: 5
+    timeout: 30
