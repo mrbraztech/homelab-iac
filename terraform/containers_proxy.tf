@@ -34,7 +34,7 @@ resource "proxmox_virtual_environment_container" "proxy" {
 
   disk {
     datastore_id = "local-lvm"
-    size         = 4
+    size         = 8
   }
 
   network_interface {
