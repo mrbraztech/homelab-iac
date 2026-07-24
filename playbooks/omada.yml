@@ -1,0 +1,9 @@
+---
+- name: Configure Omada host
+  hosts: omada
+  become: true
+  gather_facts: true
+  roles:
+    - bootstrap
+    - docker
+    - omada

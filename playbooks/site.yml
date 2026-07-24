@@ -1,0 +1,9 @@
+---
+- name: Configure Site host
+  hosts: site
+  become: true
+  gather_facts: true
+  roles:
+    - bootstrap
+    - docker
+    - frigate

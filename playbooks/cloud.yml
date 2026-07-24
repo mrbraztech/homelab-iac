@@ -1,0 +1,10 @@
+---
+- name: Configure Cloud host
+  hosts: cloud
+  become: true
+  gather_facts: true
+  roles:
+    - bootstrap
+    - docker
+    - nextcloud
+    - onlyoffice

@@ -1,0 +1,9 @@
+---
+- name: Configure VPN host
+  hosts: vpn
+  become: true
+  gather_facts: true
+  roles:
+    - bootstrap
+    - docker
+    - tailscale
