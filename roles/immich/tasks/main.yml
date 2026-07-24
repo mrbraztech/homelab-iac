@@ -1,0 +1,53 @@
+---
+- name: Ensure installation directory exists
+  ansible.builtin.file:
+    path: "{{ immich_install_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Ensure Immich directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "1000"
+    group: "1000"
+    mode: "0755"
+  loop:
+    - "{{ immich_data_path }}"
+    - "{{ immich_config_path }}"
+    - "{{ immich_upload_path }}"
+    - "{{ immich_library_path }}"
+
+- name: Check if Immich server container already exists
+  community.docker.docker_container_info:
+    name: "{{ immich_server_container_name }}"
+  register: immich_existing_container
+
+- name: Set Immich container running fact
+  ansible.builtin.set_fact:
+    immich_container_running: >-
+      {{ immich_existing_container.exists
+         and immich_existing_container.container.State.Status == 'running' }}
+
+- name: Deploy docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ immich_install_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Immich
+
+- name: Ensure Immich stack is running
+  community.docker.docker_compose_v2:
+    project_src: "{{ immich_install_dir }}"
+    state: present
+  when: not immich_container_running
+
+- name: Wait for Immich to be ready
+  ansible.builtin.wait_for:
+    port: "{{ immich_http_port }}"
+    delay: 10
+    timeout: 60

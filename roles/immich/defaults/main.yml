@@ -1,0 +1,16 @@
+---
+immich_server_image: ghcr.io/immich-app/immich-server:release
+immich_ml_image: ghcr.io/immich-app/immich-machine-learning:release
+immich_server_container_name: immich_server
+immich_ml_container_name: immich_machine_learning
+immich_http_port: "2283"
+immich_data_path: /opt/immich/data
+immich_config_path: /opt/immich/config
+immich_upload_path: /opt/immich/upload
+immich_library_path: /opt/immich/library
+immich_install_dir: /opt/immich
+immich_db_host: "192.168.10.12:5432"
+immich_db_name: immich
+immich_db_user: immich
+immich_db_password: "{{ vault_immich_db_password }}"
+immich_jwt_secret: "{{ vault_immich_jwt_secret }}"
