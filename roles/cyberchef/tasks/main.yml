@@ -59,6 +59,19 @@
     group: www-data
   when: cyberchef_download is not skipped
 
+- name: Rename CyberChef HTML to index.html
+  ansible.builtin.shell: |
+    set -o pipefail
+    cd {{ cyberchef_install_dir }}
+    html_file=$(find . -maxdepth 1 -name 'CyberChef_v*.html' | head -n 1)
+    if [ -n "$html_file" ] && [ ! -f index.html ]; then
+      mv "$html_file" index.html
+    fi
+  args:
+    executable: /bin/bash
+    creates: "{{ cyberchef_install_dir }}/index.html"
+  when: cyberchef_download is not skipped
+
 - name: Write CyberChef version marker
   ansible.builtin.copy:
     content: "{{ cyberchef_version }}"
