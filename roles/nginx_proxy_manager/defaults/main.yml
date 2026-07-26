@@ -122,7 +122,7 @@ nginx_proxy_manager_default_proxy_hosts:
       - database.omni.corp
     forward_scheme: http
     forward_host: 192.168.10.14
-    forward_port: 5050
+    forward_port: 8080
     ssl_enabled: true
     http2_support: true
     ssl_forced: true
