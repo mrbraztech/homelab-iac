@@ -15,7 +15,7 @@
 
 - name: Create NPM certificate directory for each domain
   ansible.builtin.file:
-    path: "{{ nginx_proxy_manager_data_path }}/custom_ssl/npm-{{ loop_index }}"
+    path: "{{ nginx_proxy_manager_data_path }}/custom_ssl/npm-{{ loop_index + 1 }}"
     state: directory
     owner: "1000"
     group: "1000"
@@ -28,27 +28,27 @@
 - name: Copy domain fullchain certificate to NPM
   ansible.builtin.copy:
     src: "{{ internal_ca_base_dir }}/certs/{{ item.name }}.fullchain.crt"
-    dest: "{{ nginx_proxy_manager_data_path }}/custom_ssl/npm-{{ loop.index + 1 }}/fullchain.pem"
+    dest: "{{ nginx_proxy_manager_data_path }}/custom_ssl/npm-{{ loop_index + 1 }}/fullchain.pem"
     remote_src: true
     owner: "1000"
     group: "1000"
     mode: "0600"
   loop: "{{ internal_ca_domains }}"
   loop_control:
-    index_var: loop.index
+    index_var: loop_index
   when: internal_ca_npm_data_dir.stat.exists
 
 - name: Copy domain private key to NPM
   ansible.builtin.copy:
     src: "{{ internal_ca_base_dir }}/private/{{ item.name }}.key"
-    dest: "{{ nginx_proxy_manager_data_path }}/custom_ssl/npm-{{ loop.index + 1 }}/privkey.pem"
+    dest: "{{ nginx_proxy_manager_data_path }}/custom_ssl/npm-{{ loop_index + 1 }}/privkey.pem"
     remote_src: true
     owner: "1000"
     group: "1000"
     mode: "0600"
   loop: "{{ internal_ca_domains }}"
   loop_control:
-    index_var: loop.index
+    index_var: loop_index
   when: internal_ca_npm_data_dir.stat.exists
 
 - name: Restart NPM after cert deploy
@@ -58,97 +58,3 @@
   when:
     - internal_ca_npm_data_dir.stat.exists
     - nginx_proxy_manager_install_dir is defined
-
-- name: Wait for NPM API to be ready
-  ansible.builtin.uri:
-    url: "{{ nginx_proxy_manager_api_url }}/health"
-    method: GET
-    status_code: 200
-  register: internal_ca_npm_health
-  until: internal_ca_npm_health.status == 200
-  retries: 30
-  delay: 2
-  when: internal_ca_npm_data_dir.stat.exists
-
-- name: Authenticate with NPM API
-  ansible.builtin.uri:
-    url: "{{ nginx_proxy_manager_api_url }}/tokens"
-    method: POST
-    body_format: json
-    body:
-      identity: "{{ nginx_proxy_manager_admin_email }}"
-      secret: "{{ nginx_proxy_manager_admin_password }}"
-    status_code: 200
-  register: internal_ca_npm_auth
-  no_log: true
-  when: internal_ca_npm_data_dir.stat.exists
-
-- name: Get NPM custom certificates
-  ansible.builtin.uri:
-    url: "{{ nginx_proxy_manager_api_url }}/nginx/certificates"
-    method: GET
-    headers:
-      Authorization: "Bearer {{ internal_ca_npm_auth.json.token }}"
-    status_code: 200
-  register: internal_ca_npm_certs
-  when:
-    - internal_ca_npm_data_dir.stat.exists
-    - internal_ca_npm_auth is not skipped
-
-- name: Find wildcard certificate ID
-  ansible.builtin.set_fact:
-    internal_ca_wildcard_cert_id: >-
-      {{ internal_ca_npm_certs.json |
-         selectattr('domain_name', 'equalto', internal_ca_domains[0].name) |
-         map(attribute='id') |
-         first | default(0) }}
-  when:
-    - internal_ca_npm_certs is not skipped
-    - internal_ca_npm_certs.json | length > 0
-
-- name: Get existing proxy hosts from NPM
-  ansible.builtin.uri:
-    url: "{{ nginx_proxy_manager_api_url }}/nginx/proxy-hosts"
-    method: GET
-    headers:
-      Authorization: "Bearer {{ internal_ca_npm_auth.json.token }}"
-    status_code: 200
-  register: internal_ca_existing_hosts
-  when:
-    - internal_ca_npm_data_dir.stat.exists
-    - internal_ca_npm_auth is not skipped
-
-- name: Associate certificate to proxy hosts
-  ansible.builtin.uri:
-    url: "{{ nginx_proxy_manager_api_url }}/nginx/proxy-hosts/{{ host.id }}"
-    method: PUT
-    headers:
-      Authorization: "Bearer {{ internal_ca_npm_auth.json.token }}"
-    body_format: json
-    body:
-      domain_names: "{{ host.domain_names }}"
-      forward_scheme: "{{ host.forward_scheme }}"
-      forward_host: "{{ host.forward_host }}"
-      forward_port: "{{ host.forward_port }}"
-      access_list_id: "{{ host.access_list_id | default(0) }}"
-      certificate_id: "{{ internal_ca_wildcard_cert_id }}"
-      ssl_forced: true
-      caching_enabled: "{{ host.caching_enabled | default(false) }}"
-      block_exploits: "{{ host.block_exploits | default(true) }}"
-      advanced_config: "{{ host.advanced_config | default('') }}"
-      meta:
-        letsencrypt_agree: false
-        dns_challenge: false
-      allow_websocket_upgrade: "{{ host.allow_websocket_upgrade | default(true) }}"
-      http2_support: "{{ host.http2_support | default(true) }}"
-      forward_host_header: true
-      preserve_host_header: false
-      enabled: true
-    status_code: 200
-  loop: "{{ internal_ca_existing_hosts.json }}"
-  loop_control:
-    loop_var: host
-    label: "{{ host.domain_names | join(', ') }}"
-  when:
-    - internal_ca_wildcard_cert_id | int > 0
-    - internal_ca_existing_hosts is not skipped
