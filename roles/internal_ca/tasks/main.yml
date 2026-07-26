@@ -70,3 +70,6 @@
   when:
     - internal_ca_domains | length > 0
     - nginx_proxy_manager_data_path is defined
+
+- name: Fetch CA certificate to controller
+  ansible.builtin.include_tasks: fetch_ca.yml

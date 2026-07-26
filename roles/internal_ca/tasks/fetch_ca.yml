@@ -1,0 +1,7 @@
+---
+- name: Fetch CA root certificate to controller
+  ansible.builtin.fetch:
+    src: "{{ internal_ca_base_dir }}/certs/ca.crt"
+    dest: "{{ playbook_dir }}/../ca-certificates/{{ inventory_hostname }}-ca.crt"
+    flat: true
+  when: internal_ca_base_dir is defined
