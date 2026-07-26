@@ -15,14 +15,14 @@
 
 - name: Create NPM certificate directory for each domain
   ansible.builtin.file:
-    path: "{{ nginx_proxy_manager_data_path }}/custom_ssl/npm-{{ loop.index }}"
+    path: "{{ nginx_proxy_manager_data_path }}/custom_ssl/npm-{{ loop_index }}"
     state: directory
     owner: "1000"
     group: "1000"
     mode: "0700"
   loop: "{{ internal_ca_domains }}"
   loop_control:
-    index_var: loop.index
+    index_var: loop_index
   when: internal_ca_npm_data_dir.stat.exists
 
 - name: Copy domain fullchain certificate to NPM
