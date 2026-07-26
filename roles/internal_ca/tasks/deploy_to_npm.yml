@@ -1,0 +1,54 @@
+---
+- name: Check if NPM data directory exists
+  ansible.builtin.stat:
+    path: "{{ nginx_proxy_manager_data_path }}"
+  register: internal_ca_npm_data_dir
+
+- name: Ensure NPM custom SSL base directory exists
+  ansible.builtin.file:
+    path: "{{ nginx_proxy_manager_data_path }}/custom_ssl"
+    state: directory
+    owner: "1000"
+    group: "1000"
+    mode: "0755"
+  when: internal_ca_npm_data_dir.stat.exists
+
+- name: Create NPM certificate directory for each domain
+  ansible.builtin.file:
+    path: "{{ nginx_proxy_manager_data_path }}/custom_ssl/npm-{{ loop.index }}"
+    state: directory
+    owner: "1000"
+    group: "1000"
+    mode: "0700"
+  loop: "{{ internal_ca_domains }}"
+  loop_control:
+    index_var: loop.index
+  when: internal_ca_npm_data_dir.stat.exists
+
+- name: Copy domain fullchain certificate to NPM
+  ansible.builtin.copy:
+    src: "{{ internal_ca_base_dir }}/certs/{{ item.name }}.fullchain.crt"
+    dest: "{{ nginx_proxy_manager_data_path }}/custom_ssl/npm-{{ loop.index + 1 }}/fullchain.pem"
+    remote_src: true
+    owner: "1000"
+    group: "1000"
+    mode: "0600"
+  loop: "{{ internal_ca_domains }}"
+  loop_control:
+    index_var: loop.index
+  when: internal_ca_npm_data_dir.stat.exists
+  notify: Restart NPM
+
+- name: Copy domain private key to NPM
+  ansible.builtin.copy:
+    src: "{{ internal_ca_base_dir }}/private/{{ item.name }}.key"
+    dest: "{{ nginx_proxy_manager_data_path }}/custom_ssl/npm-{{ loop.index + 1 }}/privkey.pem"
+    remote_src: true
+    owner: "1000"
+    group: "1000"
+    mode: "0600"
+  loop: "{{ internal_ca_domains }}"
+  loop_control:
+    index_var: loop.index
+  when: internal_ca_npm_data_dir.stat.exists
+  notify: Restart NPM

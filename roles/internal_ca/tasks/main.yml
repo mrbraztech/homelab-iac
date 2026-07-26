@@ -64,3 +64,9 @@
   loop_control:
     loop_var: domain
   when: internal_ca_domains | length > 0
+
+- name: Deploy certificates to NPM
+  ansible.builtin.include_tasks: deploy_to_npm.yml
+  when:
+    - internal_ca_domains | length > 0
+    - nginx_proxy_manager_data_path is defined
