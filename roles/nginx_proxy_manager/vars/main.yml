@@ -1,0 +1,105 @@
+---
+nginx_proxy_manager_default_proxy_hosts:
+  - domain_names:
+      - chef.omni.corp
+    forward_scheme: http
+    forward_host: 192.168.10.14
+    forward_port: 80
+    ssl_enabled: false
+    http2_support: false
+
+  - domain_names:
+      - containers.omni.corp
+    forward_scheme: https
+    forward_host: 192.168.10.10
+    forward_port: 8006
+    ssl_enabled: true
+    http2_support: true
+    ssl_forced: true
+
+  - domain_names:
+      - dns.omni.corp
+    forward_scheme: http
+    forward_host: 192.168.10.2
+    forward_port: 80
+    ssl_enabled: false
+    http2_support: false
+
+  - domain_names:
+      - nas.omni.corp
+    forward_scheme: http
+    forward_host: 192.168.10.12
+    forward_port: 80
+    ssl_enabled: true
+    http2_support: true
+    ssl_forced: true
+
+  - domain_names:
+      - omada.omni.corp
+    forward_scheme: https
+    forward_host: 192.168.10.11
+    forward_port: 8043
+    ssl_enabled: true
+    http2_support: true
+    ssl_forced: true
+
+  - domain_names:
+      - proxy.omni.corp
+    forward_scheme: http
+    forward_host: 192.168.10.3
+    forward_port: 81
+    ssl_enabled: true
+    http2_support: true
+    ssl_forced: true
+
+  - domain_names:
+      - site.omni.corp
+    forward_scheme: http
+    forward_host: 192.168.10.13
+    forward_port: 5000
+    ssl_enabled: false
+    http2_support: false
+
+  - domain_names:
+      - monitor.omni.corp
+    forward_scheme: http
+    forward_host: 192.168.10.10
+    forward_port: 19999
+    ssl_enabled: false
+    http2_support: false
+
+  - domain_names:
+      - cloud.omni.corp
+    forward_scheme: http
+    forward_host: 192.168.10.15
+    forward_port: 8080
+    ssl_enabled: true
+    http2_support: true
+    ssl_forced: true
+
+  - domain_names:
+      - docs.omni.corp
+    forward_scheme: http
+    forward_host: 192.168.10.16
+    forward_port: 8080
+    ssl_enabled: true
+    http2_support: true
+    ssl_forced: true
+
+  - domain_names:
+      - media.omni.corp
+    forward_scheme: http
+    forward_host: 192.168.10.17
+    forward_port: 2283
+    ssl_enabled: true
+    http2_support: true
+    ssl_forced: true
+
+  - domain_names:
+      - switch.omni.corp
+    forward_scheme: http
+    forward_host: 192.168.10.6
+    forward_port: 80
+    ssl_enabled: true
+    http2_support: true
+    ssl_forced: true

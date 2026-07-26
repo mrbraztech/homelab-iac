@@ -53,3 +53,7 @@
     port: "{{ nginx_proxy_manager_admin_port }}"
     delay: 10
     timeout: 60
+
+- name: Configure proxy hosts
+  ansible.builtin.include_tasks: configure_proxy_hosts.yml
+  when: nginx_proxy_manager_configure_proxy_hosts

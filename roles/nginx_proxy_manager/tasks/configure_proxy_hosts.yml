@@ -1,0 +1,69 @@
+---
+- name: Wait for NPM API to be ready
+  ansible.builtin.uri:
+    url: "{{ nginx_proxy_manager_api_url }}/health"
+    method: GET
+    status_code: 200
+  register: nginx_proxy_manager_health
+  until: nginx_proxy_manager_health.status == 200
+  retries: 30
+  delay: 2
+
+- name: Authenticate with NPM API
+  ansible.builtin.uri:
+    url: "{{ nginx_proxy_manager_api_url }}/tokens"
+    method: POST
+    body_format: json
+    body:
+      identity: "{{ nginx_proxy_manager_admin_email }}"
+      secret: "{{ nginx_proxy_manager_admin_password }}"
+    status_code: 200
+  register: nginx_proxy_manager_auth
+  no_log: true
+
+- name: Get existing proxy hosts
+  ansible.builtin.uri:
+    url: "{{ nginx_proxy_manager_api_url }}/nginx/proxy-hosts"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ nginx_proxy_manager_auth.json.token }}"
+    status_code: 200
+  register: nginx_proxy_manager_existing_hosts
+
+- name: Create or update proxy hosts
+  ansible.builtin.uri:
+    url: "{{ nginx_proxy_manager_api_url }}/nginx/proxy-hosts{% if item.id is defined %}/{{ item.id }}{% endif %}"
+    method: "{% if item.id is defined %}PUT{% else %}POST{% endif %}"
+    headers:
+      Authorization: "Bearer {{ npm_auth.json.token }}"
+    body_format: json
+    body:
+      domain_names: "{{ item.domain_names }}"
+      forward_scheme: "{{ item.forward_scheme }}"
+      forward_host: "{{ item.forward_host }}"
+      forward_port: "{{ item.forward_port }}"
+      access_list_id: "{{ item.access_list_id | default(0) }}"
+      certificate_id: "{{ item.certificate_id | default(0) }}"
+      ssl_forced: "{{ item.ssl_forced | default(false) }}"
+      caching_enabled: "{{ item.caching_enabled | default(false) }}"
+      block_exploits: "{{ item.block_exploits | default(true) }}"
+      advanced_config: "{{ item.advanced_config | default('') }}"
+      meta:
+        letsencrypt_agree: false
+        dns_challenge: false
+      allow_websocket_upgrade: "{{ item.allow_websocket_upgrade | default(true) }}"
+      http2_support: "{{ item.http2_support | default(false) }}"
+      forward_host_header: true
+      preserve_host_header: false
+      enabled: true
+    status_code: [200, 201]
+  loop: "{{ nginx_proxy_manager_proxy_hosts | default(nginx_proxy_manager_default_proxy_hosts) }}"
+  loop_control:
+    label: "{{ item.domain_names | join(', ') }}"
+  vars:
+    existing_host: >-
+      {{ nginx_proxy_manager_existing_hosts.json |
+         selectattr('domain_names', 'equalto', item.domain_names) |
+         first | default({}) }}
+    item: "{{ item | combine({'id': existing_host.id}) if existing_host else item }}"
+  when: nginx_proxy_manager_configure_proxy_hosts

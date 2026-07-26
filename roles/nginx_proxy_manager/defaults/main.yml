@@ -7,3 +7,8 @@ nginx_proxy_manager_admin_port: "81"
 nginx_proxy_manager_data_path: /opt/npm/data
 nginx_proxy_manager_letsencrypt_path: /opt/npm/letsencrypt
 nginx_proxy_manager_install_dir: /opt/npm
+nginx_proxy_manager_api_url: "http://localhost:81/api"
+nginx_proxy_manager_admin_email: "admin@example.com"
+nginx_proxy_manager_admin_password: "changeme"
+nginx_proxy_manager_configure_proxy_hosts: false
+nginx_proxy_manager_proxy_hosts: []
