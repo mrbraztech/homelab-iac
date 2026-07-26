@@ -1,0 +1,66 @@
+---
+- name: Ensure CA directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - "{{ internal_ca_base_dir }}"
+    - "{{ internal_ca_base_dir }}/certs"
+    - "{{ internal_ca_base_dir }}/private"
+    - "{{ internal_ca_base_dir }}/csr"
+
+- name: Check if CA root key exists
+  ansible.builtin.stat:
+    path: "{{ internal_ca_base_dir }}/private/ca.key"
+  register: internal_ca_root_key
+
+- name: Generate CA root private key
+  ansible.builtin.command:
+    cmd: >
+      openssl genrsa
+      -out {{ internal_ca_base_dir }}/private/ca.key
+      {{ internal_ca_key_size }}
+    creates: "{{ internal_ca_base_dir }}/private/ca.key"
+  when: not internal_ca_root_key.stat.exists
+
+- name: Set CA root key permissions
+  ansible.builtin.file:
+    path: "{{ internal_ca_base_dir }}/private/ca.key"
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Check if CA root certificate exists
+  ansible.builtin.stat:
+    path: "{{ internal_ca_base_dir }}/certs/ca.crt"
+  register: internal_ca_root_cert
+
+- name: Deploy CA subject template
+  ansible.builtin.template:
+    src: ca_subject.j2
+    dest: "{{ internal_ca_base_dir }}/ca_subject.txt"
+    owner: root
+    group: root
+    mode: "0644"
+  when: not internal_ca_root_cert.stat.exists
+
+- name: Generate CA root certificate
+  ansible.builtin.shell:
+    cmd: >
+      openssl req -x509 -new -nodes
+      -key {{ internal_ca_base_dir }}/private/ca.key
+      -sha256 -days {{ internal_ca_validity_days }}
+      -out {{ internal_ca_base_dir }}/certs/ca.crt
+      -subj "$(cat {{ internal_ca_base_dir }}/ca_subject.txt)"
+    creates: "{{ internal_ca_base_dir }}/certs/ca.crt"
+  when: not internal_ca_root_cert.stat.exists
+
+- name: Include domain certificate tasks
+  ansible.builtin.include_tasks: issue_certificate.yml
+  loop: "{{ internal_ca_domains }}"
+  loop_control:
+    loop_var: domain
+  when: internal_ca_domains | length > 0

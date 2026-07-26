@@ -1,0 +1,27 @@
+[req]
+default_bits = {{ internal_ca_key_size }}
+prompt = no
+default_md = sha256
+distinguished_name = dn
+req_extensions = v3_req
+
+[dn]
+C={{ internal_ca_country }}
+ST={{ internal_ca_state }}
+L={{ internal_ca_locality }}
+O={{ internal_ca_organization }}
+CN={{ domain.common_name | default(domain.name) }}
+
+[v3_req]
+keyUsage = keyEncipherment, dataEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+
+[alt_names]
+{% if domain.san is defined %}
+{% for san in domain.san %}
+DNS.{{ loop.index }} = {{ san }}
+{% endfor %}
+{% else %}
+DNS.1 = {{ domain.name }}
+{% endif %}

@@ -1,0 +1,66 @@
+---
+- name: Check if domain certificate exists
+  ansible.builtin.stat:
+    path: "{{ internal_ca_base_dir }}/certs/{{ domain.name }}.crt"
+  register: internal_ca_domain_cert
+
+- name: Generate domain private key
+  ansible.builtin.command:
+    cmd: >
+      openssl genrsa
+      -out {{ internal_ca_base_dir }}/private/{{ domain.name }}.key
+      {{ internal_ca_key_size }}
+    creates: "{{ internal_ca_base_dir }}/private/{{ domain.name }}.key"
+  when: not internal_ca_domain_cert.stat.exists
+
+- name: Set domain key permissions
+  ansible.builtin.file:
+    path: "{{ internal_ca_base_dir }}/private/{{ domain.name }}.key"
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Create OpenSSL config for domain
+  ansible.builtin.template:
+    src: domain.cnf.j2
+    dest: "{{ internal_ca_base_dir }}/csr/{{ domain.name }}.cnf"
+    owner: root
+    group: root
+    mode: "0644"
+  when: not internal_ca_domain_cert.stat.exists
+
+- name: Generate domain CSR
+  ansible.builtin.command:
+    cmd: >
+      openssl req -new
+      -key {{ internal_ca_base_dir }}/private/{{ domain.name }}.key
+      -out {{ internal_ca_base_dir }}/csr/{{ domain.name }}.csr
+      -config {{ internal_ca_base_dir }}/csr/{{ domain.name }}.cnf
+    creates: "{{ internal_ca_base_dir }}/csr/{{ domain.name }}.csr"
+  when: not internal_ca_domain_cert.stat.exists
+
+- name: Sign domain certificate with CA
+  ansible.builtin.command:
+    cmd: >
+      openssl x509 -req
+      -in {{ internal_ca_base_dir }}/csr/{{ domain.name }}.csr
+      -CA {{ internal_ca_base_dir }}/certs/ca.crt
+      -CAkey {{ internal_ca_base_dir }}/private/ca.key
+      -CAcreateserial
+      -out {{ internal_ca_base_dir }}/certs/{{ domain.name }}.crt
+      -days {{ internal_ca_cert_validity_days }}
+      -sha256
+      -extfile {{ internal_ca_base_dir }}/csr/{{ domain.name }}.cnf
+      -extensions v3_req
+    creates: "{{ internal_ca_base_dir }}/certs/{{ domain.name }}.crt"
+  when: not internal_ca_domain_cert.stat.exists
+
+- name: Create fullchain certificate
+  ansible.builtin.shell: |
+    cat {{ internal_ca_base_dir }}/certs/{{ domain.name }}.crt \
+        {{ internal_ca_base_dir }}/certs/ca.crt \
+        > {{ internal_ca_base_dir }}/certs/{{ domain.name }}.fullchain.crt
+  args:
+    executable: /bin/bash
+    creates: "{{ internal_ca_base_dir }}/certs/{{ domain.name }}.fullchain.crt"
+  when: not internal_ca_domain_cert.stat.exists

@@ -1,0 +1,12 @@
+---
+internal_ca_base_dir: /opt/internal-ca
+internal_ca_name: Omni Homelab CA
+internal_ca_country: BR
+internal_ca_state: State
+internal_ca_locality: City
+internal_ca_organization: Omni Homelab
+internal_ca_common_name: Omni Homelab Root CA
+internal_ca_validity_days: 3650
+internal_ca_cert_validity_days: 825
+internal_ca_key_size: 4096
+internal_ca_domains: []
