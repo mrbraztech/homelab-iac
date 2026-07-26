@@ -4,8 +4,7 @@ services:
     image: {{ ninerouter_image }}
     container_name: {{ ninerouter_container_name }}
     restart: unless-stopped
-    ports:
-      - "{{ ninerouter_port }}:20128"
+    network_mode: host
     volumes:
       - {{ ninerouter_data_path }}:/app/data
     environment:
@@ -13,7 +12,7 @@ services:
       PORT: "20128"
       HOSTNAME: "0.0.0.0"
       NODE_ENV: production
-      HEADROOM_URL: http://headroom:8787
+      HEADROOM_URL: http://127.0.0.1:8787
       JWT_SECRET: {{ ninerouter_jwt_secret }}
       INITIAL_PASSWORD: {{ ninerouter_initial_password }}
       REQUIRE_API_KEY: "false"
@@ -24,5 +23,4 @@ services:
     image: {{ ninerouter_headroom_image }}
     container_name: {{ ninerouter_headroom_container_name }}
     restart: unless-stopped
-    ports:
-      - "{{ ninerouter_headroom_port }}:8787"
+    network_mode: host
