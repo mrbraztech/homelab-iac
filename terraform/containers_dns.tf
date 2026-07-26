@@ -22,9 +22,6 @@ resource "proxmox_virtual_environment_container" "dns" {
       }
     }
 
-    user_account {
-      keys = [var.ssh_public_key]
-    }
   }
 
   cpu {

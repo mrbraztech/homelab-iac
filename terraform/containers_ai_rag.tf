@@ -22,9 +22,6 @@ resource "proxmox_virtual_environment_container" "ai_rag" {
       }
     }
 
-    user_account {
-      keys = [var.ssh_public_key]
-    }
   }
 
   cpu {
@@ -52,7 +49,7 @@ resource "proxmox_virtual_environment_container" "ai_rag" {
   }
 
   operating_system {
-    template_file_id = ""
+    template_file_id = "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst"
     type             = "debian"
   }
 

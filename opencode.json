@@ -1,24 +1,18 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
-    "ollama": {
+    "9router": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "Ollama Local",
+      "name": "9Router",
       "options": {
-        "baseURL": "http://192.168.10.127:11434/v1"
+        "baseURL": "http://192.168.10.19:20128/v1",
+        "apiKey": "sk-b828381d15b036ba-96ixi9-d0696261"
       },
       "models": {
-        "qwen3.5:latest": {
-          "name": "Qwen 3.5 Local",
+        "9router/free-forever": {
+          "name": "9Router Free",
           "limit": {
-            "context": 65536,
-            "output": 8192
-          }
-        },
-        "gpt-oss:20b":{
-          "name": "GPT OSS Local",
-          "limit": {
-            "context": 65536,
+            "context": 200000,
             "output": 8192
           }
         }
