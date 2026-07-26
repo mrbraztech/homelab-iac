@@ -58,3 +58,127 @@
   when:
     - internal_ca_npm_data_dir.stat.exists
     - nginx_proxy_manager_install_dir is defined
+
+- name: Wait for NPM API to be ready
+  ansible.builtin.uri:
+    url: "{{ nginx_proxy_manager_api_url }}/schema"
+    method: GET
+    status_code: 200
+  register: internal_ca_npm_health
+  until: internal_ca_npm_health.status == 200
+  retries: 30
+  delay: 2
+  when: internal_ca_npm_data_dir.stat.exists
+
+- name: Authenticate with NPM API
+  ansible.builtin.uri:
+    url: "{{ nginx_proxy_manager_api_url }}/tokens"
+    method: POST
+    body_format: json
+    body:
+      identity: "{{ nginx_proxy_manager_admin_email }}"
+      secret: "{{ nginx_proxy_manager_admin_password }}"
+    status_code: 200
+  register: internal_ca_npm_auth
+  no_log: true
+  when: internal_ca_npm_data_dir.stat.exists
+
+- name: Get NPM custom certificates
+  ansible.builtin.uri:
+    url: "{{ nginx_proxy_manager_api_url }}/nginx/certificates"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ internal_ca_npm_auth.json.token }}"
+    status_code: 200
+  register: internal_ca_npm_certs
+  when:
+    - internal_ca_npm_data_dir.stat.exists
+    - internal_ca_npm_auth is not skipped
+
+- name: Find wildcard certificate ID
+  ansible.builtin.set_fact:
+    internal_ca_wildcard_cert_id: >-
+      {{ internal_ca_npm_certs.json |
+         selectattr('nice_name', 'defined') |
+         selectattr('nice_name', 'search', 'Omni') |
+         map(attribute='id') |
+         first | default(internal_ca_npm_certs.json | map(attribute='id') | first | default(0)) }}
+  when:
+    - internal_ca_npm_certs is not skipped
+    - internal_ca_npm_certs.json | length > 0
+
+- name: Get existing proxy hosts from NPM
+  ansible.builtin.uri:
+    url: "{{ nginx_proxy_manager_api_url }}/nginx/proxy-hosts"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ internal_ca_npm_auth.json.token }}"
+    status_code: 200
+  register: internal_ca_existing_hosts
+  when:
+    - internal_ca_npm_data_dir.stat.exists
+    - internal_ca_npm_auth is not skipped
+
+- name: Associate certificate to proxy hosts
+  ansible.builtin.uri:
+    url: "{{ nginx_proxy_manager_api_url }}/nginx/proxy-hosts/{{ host.id }}"
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ internal_ca_npm_auth.json.token }}"
+    body_format: json
+    body:
+      domain_names: "{{ host.domain_names }}"
+      forward_scheme: "{{ host.forward_scheme }}"
+      forward_host: "{{ host.forward_host }}"
+      forward_port: "{{ host.forward_port }}"
+      access_list_id: "{{ host.access_list_id }}"
+      certificate_id: "{{ internal_ca_wildcard_cert_id }}"
+      ssl_forced: true
+      caching_enabled: "{{ host.caching_enabled }}"
+      block_exploits: "{{ host.block_exploits }}"
+      advanced_config: "{{ host.advanced_config }}"
+      allow_websocket_upgrade: "{{ host.allow_websocket_upgrade }}"
+      http2_support: true
+      hsts_enabled: "{{ host.hsts_enabled }}"
+      hsts_subdomains: "{{ host.hsts_subdomains }}"
+    status_code: 200
+  loop: "{{ internal_ca_existing_hosts.json }}"
+  loop_control:
+    loop_var: host
+    label: "{{ host.domain_names | join(', ') }}"
+  when:
+    - internal_ca_wildcard_cert_id | int > 0
+    - internal_ca_existing_hosts is not skipped
+
+- name: Build list of existing domains
+  ansible.builtin.set_fact:
+    internal_ca_existing_domains: "{{ internal_ca_existing_hosts.json | map(attribute='domain_names') | flatten }}"
+
+- name: Create missing proxy hosts
+  ansible.builtin.uri:
+    url: "{{ nginx_proxy_manager_api_url }}/nginx/proxy-hosts"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ internal_ca_npm_auth.json.token }}"
+    body_format: json
+    body:
+      domain_names: "{{ item.domain_names }}"
+      forward_scheme: "{{ item.forward_scheme }}"
+      forward_host: "{{ item.forward_host }}"
+      forward_port: "{{ item.forward_port }}"
+      access_list_id: 0
+      certificate_id: "{{ internal_ca_wildcard_cert_id }}"
+      ssl_forced: true
+      caching_enabled: false
+      block_exploits: true
+      advanced_config: ""
+      allow_websocket_upgrade: true
+      http2_support: true
+    status_code: 201
+  loop: "{{ nginx_proxy_manager_default_proxy_hosts }}"
+  loop_control:
+    label: "{{ item.domain_names | join(', ') }}"
+  when:
+    - internal_ca_wildcard_cert_id | int > 0
+    - internal_ca_existing_hosts is not skipped
+    - item.domain_names | intersect(internal_ca_existing_domains) | length == 0
