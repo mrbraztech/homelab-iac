@@ -8,3 +8,4 @@ pihole_data_path: /opt/pihole/data
 pihole_install_dir: /opt/pihole
 pihole_password: "{{ vault_pihole_password }}"
 pihole_dns_upstream: "1.1.1.1"
+pihole_custom_dns: []

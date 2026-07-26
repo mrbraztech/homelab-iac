@@ -46,3 +46,19 @@
     port: "{{ pihole_http_port }}"
     delay: 5
     timeout: 30
+
+- name: Deploy custom DNS records
+  ansible.builtin.copy:
+    content: |
+      # Pi-hole custom DNS records
+      # Managed by Ansible - do not edit manually
+      {% for record in pihole_custom_dns %}
+      {% for domain in record.domains %}
+      {{ record.ip }} {{ domain }}
+      {% endfor %}
+      {% endfor %}
+    dest: "{{ pihole_data_path }}/custom.list"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Pi-hole

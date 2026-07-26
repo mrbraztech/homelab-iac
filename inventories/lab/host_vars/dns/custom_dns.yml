@@ -1,0 +1,17 @@
+---
+pihole_custom_dns:
+  - ip: 192.168.10.3
+    domains:
+      - chef.omni.corp
+      - containers.omni.corp
+      - dns.omni.corp
+      - nas.omni.corp
+      - omada.omni.corp
+      - proxy.omni.corp
+      - site.omni.corp
+      - monitor.omni.corp
+      - cloud.omni.corp
+      - docs.omni.corp
+      - media.omni.corp
+      - switch.omni.corp
+      - database.omni.corp

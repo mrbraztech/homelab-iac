@@ -3,4 +3,3 @@
   community.docker.docker_compose_v2:
     project_src: "{{ pihole_install_dir }}"
     state: restarted
-  listen: Restart Pi-hole
