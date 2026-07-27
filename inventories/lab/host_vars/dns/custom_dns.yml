@@ -15,6 +15,4 @@ pihole_custom_dns:
       - media.omni.corp
       - switch.omni.corp
       - database.omni.corp
-  - ip: 192.168.10.19
-    domains:
       - router.omni.corp
