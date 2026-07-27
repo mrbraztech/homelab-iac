@@ -21,6 +21,8 @@
   gather_facts: false
 
   vars:
+    postgres_password: "{{ vault_postgres_password }}"
+    postgres_port: "5432"
     postgres_setup_users:
       - name: immich
         password: "{{ vault_immich_password }}"
@@ -71,7 +73,7 @@
     - name: Ensure extensions are installed
       community.postgresql.postgresql_ext:
         name: "{{ item.1 }}"
-        db: "{{ item.0.name }}"
+        db: "{{ item.0.database }}"
         login_host: "127.0.0.1"
         login_port: "{{ postgres_port }}"
         login_user: postgres
