@@ -1,0 +1,10 @@
+---
+- name: Configure Proxmox host
+  hosts: proxmox
+  become: true
+  gather_facts: true
+  roles:
+    - role: netdata
+      vars:
+        netdata_role: parent
+        netdata_memory_mode: dbengine

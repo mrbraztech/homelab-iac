@@ -10,6 +10,10 @@
     - redis
     - omv
     - minio
+    - role: netdata
+      vars:
+        netdata_role: child
+        netdata_memory_mode: none
 
 - name: Configure PostgreSQL databases
   hosts: nas

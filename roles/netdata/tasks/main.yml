@@ -1,0 +1,35 @@
+---
+- name: Install Netdata
+  ansible.builtin.apt:
+    name:
+      - netdata
+      - netdata-dashboard
+      - netdata-plugin-go
+      - netdata-plugin-apps
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Deploy netdata.conf
+  ansible.builtin.template:
+    src: netdata.conf.j2
+    dest: /etc/netdata/netdata.conf
+    owner: root
+    group: netdata
+    mode: "0644"
+  notify: Restart Netdata
+
+- name: Deploy stream.conf
+  ansible.builtin.template:
+    src: stream.conf.j2
+    dest: /etc/netdata/stream.conf
+    owner: root
+    group: netdata
+    mode: "0640"
+  notify: Restart Netdata
+
+- name: Ensure Netdata is enabled and running
+  ansible.builtin.service:
+    name: netdata
+    enabled: true
+    state: started

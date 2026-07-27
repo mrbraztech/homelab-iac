@@ -1,0 +1,17 @@
+# netdata streaming configuration
+# Managed by Ansible - do not edit manually
+
+{% if netdata_role == 'child' %}
+[stream]
+    enabled = yes
+    destination = {{ netdata_parent_host }}:{{ netdata_parent_port }}
+    api key = {{ netdata_api_key }}
+{% else %}
+[stream]
+    enabled = no
+
+[{{ netdata_api_key }}]
+    enabled = yes
+    default memory mode = dbengine
+    health enabled by default = yes
+{% endif %}

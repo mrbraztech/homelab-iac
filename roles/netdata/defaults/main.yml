@@ -1,0 +1,10 @@
+---
+netdata_role: child
+netdata_parent_host: 192.168.10.10
+netdata_parent_port: 19999
+netdata_api_key: 65993fa4-2354-456a-93d6-e1d923661caa
+netdata_memory_mode: dbengine
+netdata_dbengine_page_cache_size_mib: 64
+netdata_dbengine_tier0_disk_space_mib: 1024
+netdata_dbengine_tier1_disk_space_mib: 1024
+netdata_dbengine_tier2_disk_space_mib: 1024
