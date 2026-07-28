@@ -3,17 +3,16 @@ services:
     image: "{{ pihole_image }}"
     container_name: "{{ pihole_container_name }}"
     restart: unless-stopped
+    network_mode: host
     environment:
       TZ: "{{ bootstrap_timezone }}"
       WEBPASSWORD: "{{ pihole_password }}"
       DNSMASQ_LISTENING: all
       PIHOLE_DNS_: "{{ pihole_dns_upstream }}"
-    ports:
-      - "{{ pihole_http_port }}:80/tcp"
-      - "{{ pihole_dns_port }}:53/tcp"
-      - "{{ pihole_dns_port }}:53/udp"
-      - "{{ pihole_https_port }}:443/tcp"
     volumes:
       - {{ pihole_data_path }}:/etc/pihole
+    dns:
+      - 9.9.9.9
+      - 149.112.112.112
     cap_add:
       - NET_ADMIN

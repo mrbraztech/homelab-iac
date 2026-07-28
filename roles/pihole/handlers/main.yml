@@ -3,3 +3,10 @@
   community.docker.docker_compose_v2:
     project_src: "{{ pihole_install_dir }}"
     state: restarted
+
+- name: Update Pi-hole gravity
+  community.docker.docker_container_exec:
+    name: pihole
+    command: pihole
+    argv:
+      - "-g"

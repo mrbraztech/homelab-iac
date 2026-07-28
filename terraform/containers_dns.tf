@@ -22,6 +22,9 @@ resource "proxmox_virtual_environment_container" "dns" {
       }
     }
 
+    user_account {
+      keys = [var.ssh_public_key]
+    }
   }
 
   cpu {
@@ -29,8 +32,8 @@ resource "proxmox_virtual_environment_container" "dns" {
   }
 
   memory {
-    dedicated = 128
-    swap      = 128
+    dedicated = 256
+    swap      = 256
   }
 
   disk {
@@ -44,7 +47,7 @@ resource "proxmox_virtual_environment_container" "dns" {
   }
 
   operating_system {
-    template_file_id = ""
+    template_file_id = "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst"
     type             = "debian"
   }
 

@@ -1,0 +1,7 @@
+---
+unbound_listen_address: "127.0.0.1"
+unbound_listen_port: 5353
+unbound_interface: "lo"
+unbound_access_control: "127.0.0.0/8 allow"
+unbound_python: /usr/bin/python3
+unbound_package: unbound

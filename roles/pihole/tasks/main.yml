@@ -11,8 +11,8 @@
   ansible.builtin.file:
     path: "{{ pihole_data_path }}"
     state: directory
-    owner: "root"
-    group: "root"
+    owner: "1000"
+    group: "1000"
     mode: "0755"
 
 - name: Check if Pi-hole container already exists
@@ -47,18 +47,84 @@
     delay: 5
     timeout: 30
 
-- name: Deploy custom DNS records
-  ansible.builtin.copy:
-    content: |
-      # Pi-hole custom DNS records
-      # Managed by Ansible - do not edit manually
-      {% for record in pihole_custom_dns %}
-      {% for domain in record.domains %}
-      {{ record.ip }} {{ domain }}
-      {% endfor %}
-      {% endfor %}
-    dest: "{{ pihole_data_path }}/custom.list"
-    owner: root
-    group: root
-    mode: "0644"
+- name: Authenticate with Pi-hole API
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ pihole_http_port }}/api/auth"
+    method: POST
+    body_format: json
+    body:
+      password: "{{ pihole_password }}"
+    status_code: 200
+  register: pihole_auth
+  no_log: true
+  when: not ansible_check_mode
+
+- name: Set upstream DNS to local Unbound resolver
+  ansible.builtin.shell: |
+    set -o pipefail
+    docker exec pihole cp /etc/pihole/pihole.toml /etc/pihole/pihole.toml.bak
+    docker exec pihole sed \
+      -i "/upstreams = \[/,/^\s*\]/{/\"127\.0\.0\.1#5353\"/!{/^[[:space:]]*\"/d}}" \
+      /etc/pihole/pihole.toml
+    docker exec pihole sed -i '/upstreams = \[/a\        "127.0.0.1#5353",' /etc/pihole/pihole.toml
+  args:
+    executable: /bin/bash
+  register: pihole_upstream
+  changed_when: pihole_upstream.rc == 0
   notify: Restart Pi-hole
+  when: not ansible_check_mode
+
+- name: Build custom DNS hosts list
+  ansible.builtin.set_fact:
+    pihole_dns_hosts: "{{ pihole_dns_hosts | default([]) + [item.0.ip + ' ' + item.1] }}"
+  loop: "{{ pihole_custom_dns | subelements('domains') }}"
+  loop_control:
+    label: "{{ item.0.ip }} {{ item.1 }}"
+  when: not ansible_check_mode
+
+- name: Set custom DNS records via Pi-hole v6 API
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ pihole_http_port }}/api/config/dns/hosts"
+    method: PATCH
+    headers:
+      sid: "{{ pihole_auth.json.session.sid }}"
+    body_format: json
+    body:
+      config:
+        dns:
+          hosts: "{{ pihole_dns_hosts }}"
+    status_code: 200
+  when:
+    - not ansible_check_mode
+    - pihole_custom_dns | length > 0
+
+- name: Ensure blocklists are configured
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ pihole_http_port }}/api/lists"
+    method: GET
+    headers:
+      sid: "{{ pihole_auth.json.session.sid }}"
+    status_code: 200
+  register: pihole_lists
+  when: not ansible_check_mode
+
+- name: Add missing blocklists
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ pihole_http_port }}/api/lists?type=block"
+    method: POST
+    headers:
+      sid: "{{ pihole_auth.json.session.sid }}"
+    body_format: json
+    body:
+      address: "{{ item.url }}"
+      comment: "{{ item.comment }}"
+      enabled: true
+    status_code: [200, 201, 409]
+  loop: "{{ pihole_blocklists }}"
+  register: pihole_list_result
+  notify: Update Pi-hole gravity
+  when:
+    - not ansible_check_mode
+    - pihole_lists.json is defined
+    - pihole_lists.json.lists is defined
+    - (pihole_lists.json.lists | selectattr('address', 'equalto', item.url) | list | length == 0)
