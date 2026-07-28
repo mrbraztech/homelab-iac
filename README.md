@@ -362,9 +362,14 @@ Both must pass. Pre-commit hooks run these automatically.
 
 ## Disaster Recovery
 
+> **Documentos detalhados:**
+> - [`docs/proxmox-rebuild.md`](docs/proxmox-rebuild.md) — Instalação do Proxmox VE do zero (hardware novo)
+> - [`docs/disaster-recovery.md`](docs/disaster-recovery.md) — Procedimento completo de recuperação
+
 1. **Provision infrastructure**: `source scripts/export-tf-vars.sh && cd terraform && tofu init && tofu apply`
-2. **Configure hosts**: `ansible-playbook playbooks/<playbook>.yml --limit <host>` for each host
-3. **Restore data**: from MinIO backups on `nas-backup` storage
+2. **GPU passthrough**: `ansible-playbook playbooks/proxmox.yml --limit proxmox`
+3. **Configure hosts**: `ansible-playbook playbooks/<playbook>.yml --limit <host>` for each host
+4. **Restore data**: from MinIO backups on `nas-backup` storage
 
 ---
 
