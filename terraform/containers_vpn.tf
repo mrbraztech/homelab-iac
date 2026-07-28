@@ -44,7 +44,6 @@ resource "proxmox_virtual_environment_container" "vpn" {
 
   network_interface {
     name     = "eth0"
-    firewall = true
   }
 
   operating_system {

@@ -38,9 +38,13 @@ resource "proxmox_virtual_environment_container" "site" {
     size         = 32
   }
 
+  # GPU passthrough for Frigate (/dev/dri) requires manual LXC config:
+  #   lxc.cgroup2.devices.allow: c 226:* rwm
+  #   lxc.mount.entry: /dev/dri dev/dri none bind,optional,create=dir
+  # Applied directly on Proxmox host until BPG provider supports raw LXC entries.
+
   network_interface {
     name     = "eth0"
-    firewall = true
   }
 
   operating_system {

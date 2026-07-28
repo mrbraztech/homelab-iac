@@ -45,7 +45,6 @@ resource "proxmox_virtual_environment_container" "cloud" {
 
   network_interface {
     name     = "eth0"
-    firewall = true
   }
 
   operating_system {

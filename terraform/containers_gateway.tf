@@ -40,7 +40,6 @@ resource "proxmox_virtual_environment_container" "gateway" {
 
   network_interface {
     name     = "eth0"
-    firewall = true
   }
 
   operating_system {
