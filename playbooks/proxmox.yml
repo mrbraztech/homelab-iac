@@ -8,3 +8,20 @@
       vars:
         netdata_role: parent
         netdata_memory_mode: dbengine
+
+  tasks:
+    - name: Check if GPU passthrough is configured for site CT
+      ansible.builtin.shell: |
+        set -o pipefail
+        pct config 104 | grep -c "lxc.cgroup2.devices.allow: c 226:\* rwm"
+      register: site_gpu_check
+      failed_when: false
+      changed_when: false
+
+    - name: Configure GPU passthrough for site CT (Frigate)
+      ansible.builtin.shell: |
+        pct set 104 \
+          -lxc "lxc.cgroup2.devices.allow=c 226:* rwm" \
+          -lxc "lxc.mount.entry=/dev/dri dev/dri none bind,optional,create=dir"
+      when: site_gpu_check.rc != 0
+      changed_when: site_gpu_check.rc != 0
