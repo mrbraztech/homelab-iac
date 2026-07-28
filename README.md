@@ -367,8 +367,7 @@ Both must pass. Pre-commit hooks run these automatically.
 > - [`docs/disaster-recovery.md`](docs/disaster-recovery.md) — Procedimento completo de recuperação
 
 1. **Provision infrastructure**: `source scripts/export-tf-vars.sh && cd terraform && tofu init && tofu apply`
-2. **GPU passthrough**: `ansible-playbook playbooks/proxmox.yml --limit proxmox`
-3. **Configure hosts**: `ansible-playbook playbooks/<playbook>.yml --limit <host>` for each host
+2. **Configure hosts**: `ansible-playbook playbooks/proxmox.yml && ansible-playbook playbooks/<playbook>.yml --limit <host>` for each host
 4. **Restore data**: from MinIO backups on `nas-backup` storage
 
 ---

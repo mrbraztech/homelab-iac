@@ -69,21 +69,7 @@ Após importar, verificar:
 tofu plan  # deve mostrar 0 changes (exceto IPs de bridge Docker)
 ```
 
-## 3. GPU passthrough — Frigate
-
-O provider BPG não gerencia entradas LXC raw. Aplicar manualmente ou via Ansible:
-
-```bash
-# Via Ansible (recomendado):
-ansible-playbook playbooks/proxmox.yml --limit proxmox
-
-# Ou manualmente:
-pct set 104 \
-  -lxc "lxc.cgroup2.devices.allow=c 226:* rwm" \
-  -lxc "lxc.mount.entry=/dev/dri dev/dri none bind,optional,create=dir"
-```
-
-## 4. Configurar CTs com Ansible
+## 3. Configurar CTs com Ansible
 
 ```bash
 ansible-playbook playbooks/proxmox.yml --limit proxmox
@@ -100,7 +86,7 @@ ansible-playbook playbooks/gateway.yml --limit gateway
 ansible-playbook playbooks/9router.yml --limit 9router
 ```
 
-## 5. Restaurar dados de aplicação
+## 4. Restaurar dados de aplicação
 
 Os backups ficam no MinIO (`nas-backup` storage, `/export/backup`).
 
@@ -118,7 +104,7 @@ pct restore <vmid> <backup-file> --storage local-lvm
 
 Cada serviço tem seus dados em volumes Docker ou bind mounts no CT correspondente. Os backups de dados de aplicação (banco, arquivos) são responsabilidade de cada serviço e não são cobertos por este documento.
 
-## 6. Verificação
+## 5. Verificação
 
 ```bash
 # Ping em todos os hosts
