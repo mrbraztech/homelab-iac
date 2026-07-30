@@ -1,0 +1,111 @@
+version: 0.17-0
+
+mqtt:
+  enabled: {{ frigate_mqtt_enabled }}
+
+{% if frigate_mqtt_enabled %}
+mqtt:
+  host: {{ frigate_mqtt_host | default("") }}
+  port: {{ frigate_mqtt_port | default(1883) }}
+  user: {{ frigate_mqtt_user | default("") }}
+  password: {{ frigate_mqtt_password | default("") }}
+{% endif %}
+
+detectors:
+  ov:
+    type: openvino
+    device: GPU
+
+model:
+  width: 300
+  height: 300
+  input_tensor: nhwc
+  input_pixel_format: bgr
+  path: /openvino-model/ssdlite_mobilenet_v2.xml
+  labelmap_path: /openvino-model/coco_91cl_bkgr.txt
+
+telemetry:
+  stats:
+    intel_gpu_stats: false
+
+birdseye:
+  enabled: true
+  mode: objects
+
+objects:
+  track:
+    - person
+    - car
+  filters:
+    person:
+      threshold: 0.75
+
+record:
+  enabled: true
+  continuous:
+    days: 0
+  motion:
+    days: 1
+  alerts:
+    retain:
+      days: 7
+      mode: active_objects
+  detections:
+    retain:
+      days: 7
+      mode: active_objects
+
+snapshots:
+  enabled: true
+  bounding_box: true
+  retain:
+    default: 7
+
+detect:
+  enabled: true
+  width: 640
+  height: 360
+  fps: 5
+
+motion:
+  threshold: 45
+  contour_area: 50
+
+review:
+  alerts:
+    labels:
+      - person
+      - car
+
+live:
+  quality: 10
+  height: 1080
+
+go2rtc:
+  streams:
+{% for name, camera in frigate_cameras.items() %}
+    {{ name }}:
+      - "{{ camera.main_stream }}"
+    {{ name }}_sub:
+      - "{{ camera.sub_stream }}"
+{% endfor %}
+
+ffmpeg:
+  hwaccel_args: ""
+
+cameras:
+{% for name, camera in frigate_cameras.items() %}
+  {{ name }}:
+    enabled: {{ camera.enabled | default(true) | lower }}
+    friendly_name: "{{ camera.friendly_name }}"
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/{{ name }}_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+        - path: rtsp://127.0.0.1:8554/{{ name }}
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+{% endfor %}

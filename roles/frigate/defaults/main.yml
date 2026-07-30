@@ -7,3 +7,17 @@ frigate_webrtc_port: "8555"
 frigate_data_path: /opt/frigate/storage
 frigate_config_path: /opt/frigate/config
 frigate_install_dir: /opt/frigate
+
+frigate_mqtt_enabled: false
+
+frigate_cameras:
+  backyard:
+    enabled: false
+    friendly_name: "Quintal dos fundos"
+    main_stream: "rtsp://admin:{{ vault_frigate_backyard_password }}@192.168.10.216:554/Streaming/Channels/101"
+    sub_stream: "rtsp://admin:{{ vault_frigate_backyard_password }}@192.168.10.216:554/Streaming/Channels/102"
+  gate:
+    enabled: true
+    friendly_name: "Portão"
+    main_stream: "rtsp://admin:{{ vault_frigate_gate_password }}@192.168.20.100:554/onvif1"
+    sub_stream: "rtsp://admin:{{ vault_frigate_gate_password }}@192.168.20.100:554/onvif2"
