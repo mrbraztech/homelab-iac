@@ -1,11 +1,4 @@
 ---
-# User
-bootstrap_admin_user: ansible
-bootstrap_admin_groups:
-  - sudo
-bootstrap_admin_shell: /bin/bash
-bootstrap_admin_authorized_keys: []
-
 # Packages
 bootstrap_packages:
   - sudo

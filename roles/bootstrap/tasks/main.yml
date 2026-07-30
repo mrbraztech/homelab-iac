@@ -17,12 +17,6 @@
     - bootstrap
     - timezone
 
-- name: Configure administrative user
-  ansible.builtin.import_tasks: user.yml
-  tags:
-    - bootstrap
-    - user
-
 - name: Configure SSH hardening
   ansible.builtin.import_tasks: ssh.yml
   tags:
