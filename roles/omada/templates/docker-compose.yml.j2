@@ -5,16 +5,15 @@ services:
     restart: unless-stopped
     environment:
       TZ: "{{ bootstrap_timezone }}"
+      PUID: "{{ omada_puid }}"
+      PGID: "{{ omada_pgid }}"
       MANAGE_HTTP_PORT: "{{ omada_http_port }}"
       MANAGE_HTTPS_PORT: "{{ omada_https_port }}"
-      PORTAL_HTTP_PORT: "{{ omada_portal_port }}"
-    ports:
-      - "{{ omada_http_port }}:8043/tcp"
-      - "{{ omada_https_port }}:8843/tcp"
-      - "{{ omada_portal_port }}:8088/tcp"
-      - "27001:27001/udp"
-      - "29810:29810/udp"
-      - "29811-29814:29811-29814/tcp"
+      PORTAL_HTTP_PORT: "{{ omada_http_port }}"
+      PORTAL_HTTPS_PORT: "{{ omada_portal_https_port }}"
+      SHOW_SERVER_LOGS: "{{ omada_show_server_logs }}"
+      SHOW_MONGODB_LOGS: "{{ omada_show_mongodb_logs }}"
+    network_mode: host
     volumes:
       - {{ omada_data_path }}:/opt/tplink/EAPController/data
       - {{ omada_log_path }}:/opt/tplink/EAPController/logs

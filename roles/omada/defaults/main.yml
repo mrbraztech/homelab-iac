@@ -1,9 +1,13 @@
 ---
 omada_image: mbentley/omada-controller:6.2.10.17
 omada_container_name: omada
-omada_http_port: "8043"
-omada_https_port: "8843"
-omada_portal_port: "8088"
+omada_http_port: "8088"
+omada_https_port: "8043"
+omada_portal_https_port: "8843"
+omada_puid: "1000"
+omada_pgid: "1000"
+omada_show_server_logs: "true"
+omada_show_mongodb_logs: "false"
 omada_data_path: /opt/omada/data
 omada_log_path: /opt/omada/log
 omada_install_dir: /opt/omada
