@@ -5,17 +5,19 @@ services:
     restart: unless-stopped
     environment:
       DB_HOSTNAME: "{{ immich_db_host }}"
+      DB_PORT: "{{ immich_db_port }}"
       DB_DATABASE_NAME: "{{ immich_db_name }}"
       DB_USERNAME: "{{ immich_db_user }}"
       DB_PASSWORD: "{{ immich_db_password }}"
+      REDIS_HOSTNAME: "{{ immich_redis_host }}"
+      REDIS_PORT: "{{ immich_redis_port }}"
       JWT_SECRET: "{{ immich_jwt_secret }}"
       UPLOAD_LOCATION: "{{ immich_upload_path }}"
       IMMICH_MACHINE_LEARNING_URL: http://immich-machine-learning:3003
     ports:
-      - "{{ immich_http_port }}:2283/tcp"
+      - "{{ immich_http_port }}:2283"
     volumes:
-      - {{ immich_upload_path }}:/usr/src/app/upload
-      - {{ immich_library_path }}:/library
+      - {{ immich_upload_path }}:/data
     depends_on:
       - immich-machine-learning
 
@@ -24,5 +26,7 @@ services:
     container_name: "{{ immich_ml_container_name }}"
     restart: unless-stopped
     volumes:
-      - {{ immich_config_path }}:/config
-      - {{ immich_upload_path }}:/usr/src/app/upload
+      - model-cache:/cache
+
+volumes:
+  model-cache:
