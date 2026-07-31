@@ -170,7 +170,7 @@
       certificate_id: "{{ internal_ca_wildcard_cert_id }}"
       ssl_forced: false
       caching_enabled: false
-      block_exploits: true
+      block_exploits: false
       advanced_config: ""
       allow_websocket_upgrade: true
       http2_support: true

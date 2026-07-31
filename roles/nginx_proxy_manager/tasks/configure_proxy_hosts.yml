@@ -46,7 +46,7 @@
       certificate_id: "{{ item.certificate_id | default(0) }}"
       ssl_forced: "{{ item.ssl_forced | default(false) }}"
       caching_enabled: "{{ item.caching_enabled | default(false) }}"
-      block_exploits: "{{ item.block_exploits | default(true) }}"
+      block_exploits: "{{ item.block_exploits | default(false) }}"
       advanced_config: "{{ item.advanced_config | default('') }}"
       meta:
         letsencrypt_agree: false
