@@ -142,7 +142,7 @@ homelab-iac/
 │   ├── nextcloud/               # Nextcloud
 │   ├── onlyoffice/              # OnlyOffice Document Server
 │   ├── immich/                  # Immich photo/video
-│   ├── gateway/                 # WireGuard Proton exit-node (NAT)
+│   ├── gateway/                 # WireGuard exit-node + microsocks (SOCKS5)
 │   └── minio/                   # MinIO AIStor
 ├── terraform/
 │   ├── backend.tf               # S3 backend (MinIO)
@@ -257,7 +257,7 @@ All hosts in `inventories/lab/hosts.yml` under the `lab` group:
 | cloud | 192.168.10.15 | `cloud.yml` | Nextcloud + OnlyOffice |
 | docserver | 192.168.10.16 | `docserver.yml` | OnlyOffice |
 | media | 192.168.10.17 | `media.yml` | Immich |
-| gateway | 192.168.10.5 | `gateway.yml` | WireGuard exit-node |
+| gateway | 192.168.10.5 | `gateway.yml` | WireGuard exit-node + SOCKS5 |
 | ai-rag | 192.168.10.18 | — | (managed via Terraform only) |
 
 ### Run a playbook

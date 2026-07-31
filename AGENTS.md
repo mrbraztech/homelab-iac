@@ -44,7 +44,7 @@ ansible-inventory --graph
 | `cloud.yml` | cloud | Nextcloud + OnlyOffice |
 | `docserver.yml` | docserver | OnlyOffice |
 | `media.yml` | media | Immich |
-| `gateway.yml` | gateway | WireGuard Proton exit-node |
+| `gateway.yml` | gateway | WireGuard exit-node + microsocks SOCKS5 |
 | `proxmox.yml` | proxmox | Netdata, GPU passthrough |
 
 ## Provisioning (OpenTofu)
