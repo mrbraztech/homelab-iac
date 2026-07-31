@@ -5,3 +5,5 @@ onlyoffice_http_port: "8080"
 onlyoffice_data_path: /opt/onlyoffice/data
 onlyoffice_log_path: /opt/onlyoffice/log
 onlyoffice_install_dir: /opt/onlyoffice
+onlyoffice_jwt_enabled: "true"
+onlyoffice_jwt_secret: "{{ vault_onlyoffice_jwt_secret }}"

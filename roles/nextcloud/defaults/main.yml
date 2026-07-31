@@ -2,12 +2,10 @@
 nextcloud_image: nextcloud:31-apache
 nextcloud_container_name: nextcloud
 nextcloud_http_port: "8080"
-nextcloud_data_path: /opt/nextcloud/data
-nextcloud_config_path: /opt/nextcloud/config
+nextcloud_data_path: /mnt/nextcloud
 nextcloud_install_dir: /opt/nextcloud
-nextcloud_db_host: "192.168.10.12:5432"
+nextcloud_db_host: "192.168.10.12"
+nextcloud_redis_host: "192.168.10.12"
 nextcloud_db_name: nextcloud
 nextcloud_db_user: nextcloud
 nextcloud_db_password: "{{ vault_nextcloud_db_password }}"
-nextcloud_admin_user: admin
-nextcloud_admin_password: "{{ vault_nextcloud_admin_password }}"

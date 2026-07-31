@@ -119,7 +119,7 @@ homelab-iac/
 │   ├── dns.yml                  # DNS: bootstrap, docker, pihole
 │   ├── omada.yml                # Omada: bootstrap, docker, omada
 │   ├── site.yml                 # Site: bootstrap, docker, frigate
-│   ├── vpn.yml                  # VPN: bootstrap, docker, tailscale
+│   ├── vpn.yml                  # VPN: bootstrap, tailscale
 │   ├── cloud.yml                # Cloud: bootstrap, docker, nextcloud, onlyoffice
 │   ├── docserver.yml            # DocServer: bootstrap, docker, onlyoffice
 │   ├── media.yml                # Media: bootstrap, docker, immich
@@ -138,7 +138,7 @@ homelab-iac/
 │   ├── pihole/                  # Pi-hole DNS
 │   ├── omada/                   # TP-Link Omada Controller
 │   ├── frigate/                 # Frigate NVR
-│   ├── tailscale/               # Tailscale VPN mesh
+│   ├── tailscale/               # Tailscale (native)
 │   ├── nextcloud/               # Nextcloud
 │   ├── onlyoffice/              # OnlyOffice Document Server
 │   ├── immich/                  # Immich photo/video
@@ -302,6 +302,7 @@ Sensitive values stored in `inventories/lab/host_vars/<host>/vault.yml` (Ansible
 | dns | `vault_pihole_password` |
 | vpn | `vault_tailscale_auth_key` |
 | cloud | `vault_nextcloud_db_password`, `vault_nextcloud_admin_password` |
+| docserver | `vault_onlyoffice_jwt_secret` |
 | media | `vault_immich_db_password`, `vault_immich_jwt_secret` |
 
 Encrypt a new vault file:

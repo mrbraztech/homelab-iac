@@ -2,6 +2,8 @@
 
 Ansible + OpenTofu repo managing Debian homelab CTs on Proxmox.
 
+Operational procedures live in `docs/` (`access.md`, `proxmox-rebuild.md`, `disaster-recovery.md`, `npm-proxy-hosts.md`, `nas-services.md`).
+
 ## Validate before committing
 
 ```bash
@@ -34,8 +36,8 @@ ansible-inventory --graph
 | `nas.yml` | nas | PostgreSQL, Redis, OMV, MinIO, Netdata |
 | `tools.yml` | tools | CyberChef, pgAdmin |
 | `9router.yml` | 9router | 9Router + Headroom |
-| `proxy.yml` | proxy | Nginx Proxy Manager |
-| `dns.yml` | dns | Pi-hole |
+| `proxy.yml` | proxy | Nginx Proxy Manager, internal CA |
+| `dns.yml` | dns | Pi-hole + Unbound |
 | `omada.yml` | omada | Omada Controller |
 | `site.yml` | site | Frigate NVR |
 | `vpn.yml` | vpn | Tailscale |
@@ -57,14 +59,16 @@ tofu validate
 tofu import proxmox_virtual_environment_container.<name> pve/<vmid>
 ```
 
-State stored in MinIO S3 (`http://192.168.10.12:9000`, bucket `proxmox-ct-state`). One CT per file (`containers_<name>.tf`).
+State stored in MinIO S3 (`http://192.168.10.12:9000`, bucket `proxmox-ct-state`). One CT per file (`containers_<name>.tf`). `var.ssh_public_key` is hardcoded in `scripts/export-tf-vars.sh` — if your SSH key changes, update it there and the inventory keys below.
 
 ## Inventory
 
-Two groups in `inventories/lab/hosts.yml`:
+Groups in `inventories/lab/hosts.yml`. **All hosts connect as `root`** (the old `ansible` user is gone).
 
-- **`lab`** — Debian CTs, user `ansible`, key `~/.ssh/homelab_ed25519`
-- **`infra`** — `nas` (ansible), `proxmox` (root)
+- **`lab`** — Debian CTs (`ai-rag`, `cloud`, `dns`, `docserver`, `gateway`, `media`, `9router`, `omada`, `proxy`, `site`, `tools`, `vpn`). Key `~/.ssh/id_ed25519_opencode`, always via `ProxyJump=proxmox` (`StrictHostKeyChecking=no` set in inventory — no known_hosts needed).
+- **`infra`** — `nas` (key `~/.ssh/id_ed25519_opencode`), `proxmox` (key `~/.ssh/id_ed25519_proxmox_opencode`). Direct, no jump.
+
+`ai-rag` is in the inventory but has **no playbook** (Terraform-managed only).
 
 ## Vault
 
@@ -94,11 +98,9 @@ ansible-vault encrypt inventories/lab/host_vars/<host>/vault.yml
 ## Gotchas
 
 - `collections/ansible_collections/` is vendored locally — excluded from linters. Never edit.
-- `host_key_checking = True` — new hosts need SSH known_hosts first.
-- SSH uses `~/.ssh/homelab_ed25519`, user `ansible` (except proxmox=root).
-- First provision: `bootstrap_ssh_password_authentication: true` in group_vars. Default is `false`.
+- `lab` hosts are only reachable via `ProxyJump=proxmox` — connection fails if proxmox is down or unreachable.
+- First provision: `bootstrap_ssh_password_authentication: true` in `inventories/lab/group_vars/all.yml` (password needed for first SSH key push). Default in the role is `false`.
 - `check.yml` targets `all` (not just `lab`).
-- On first run after `tofu apply`, the CT exists but Ansible has not run `bootstrap` yet — the `ansible` user may not exist. If `tofu apply` created the CT with `user_account` (SSH key injection), the SSH key from `var.ssh_public_key` is used; the Ansible `ansible` user is created during the first `bootstrap` run.
 - Avoid committing `opencode.json` — it's in `.gitignore` (contains API keys).
 
 ## Definition of Done

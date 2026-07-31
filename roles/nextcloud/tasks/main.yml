@@ -7,16 +7,19 @@
     group: root
     mode: "0755"
 
-- name: Ensure Nextcloud directories exist
+- name: Ensure Nextcloud data directory exists
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ nextcloud_data_path }}"
+    state: directory
+    mode: "0770"
+
+- name: Ensure Nextcloud html directory exists
+  ansible.builtin.file:
+    path: "{{ nextcloud_install_dir }}/html"
     state: directory
     owner: "www-data"
     group: "www-data"
     mode: "0755"
-  loop:
-    - "{{ nextcloud_data_path }}"
-    - "{{ nextcloud_config_path }}"
 
 - name: Check if Nextcloud container already exists
   community.docker.docker_container_info:

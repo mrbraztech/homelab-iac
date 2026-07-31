@@ -4,6 +4,7 @@
   become: true
   gather_facts: true
   roles:
-    - bootstrap
-    - docker
-    - tailscale
+    - role: bootstrap
+      tags: [bootstrap]
+    - role: tailscale
+      tags: [tailscale]

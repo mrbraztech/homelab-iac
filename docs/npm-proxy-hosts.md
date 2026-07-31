@@ -20,12 +20,14 @@ Current NPM proxy hosts configuration extracted from CT 101 (proxy).
 | docs.omni.corp | 192.168.10.16 | 8080 | Yes | OnlyOffice (docserver CT) |
 | media.omni.corp | 192.168.10.17 | 2283 | Yes | Immich (media CT) |
 | switch.omni.corp | 192.168.10.6 | 80 | Yes | Network switch management |
+| database.omni.corp | 192.168.10.14 | 8080 | Yes | PostgreSQL (tools CT) |
+| router.omni.corp | 192.168.10.19 | 20128 | Yes | 9Router (9router CT) |
 
 ---
 
 ## SSL Certificates
 
-SSL-enabled hosts (containers, nas, omada, proxy, cloud, docs, media, switch) use custom certificates stored in `/data/custom_ssl/npm-*/`.
+SSL-enabled hosts (containers, nas, omada, proxy, cloud, docs, media, switch, database, router) use custom certificates stored in `/data/custom_ssl/npm-*/`. Force-SSL (HTTP→HTTPS redirect) is **disabled** on all proxy hosts so container-to-container integrations (e.g. OnlyOffice→Nextcloud callbacks) work over plain HTTP without certificate trust issues.
 
 ---
 
@@ -87,7 +89,6 @@ server {
   ssl_certificate_key /data/custom_ssl/npm-2/privkey.pem;
 
   include conf.d/include/assets.conf;
-  include conf.d/include/force-ssl.conf;
 
   proxy_set_header Upgrade $http_upgrade;
   proxy_set_header Connection $http_connection;

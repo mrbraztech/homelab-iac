@@ -29,7 +29,7 @@ nginx_proxy_manager_default_proxy_hosts:
     forward_port: 8006
     ssl_enabled: true
     http2_support: true
-    ssl_forced: true
+    ssl_forced: false
 
   - domain_names:
       - dns.omni.corp
@@ -46,7 +46,7 @@ nginx_proxy_manager_default_proxy_hosts:
     forward_port: 80
     ssl_enabled: true
     http2_support: true
-    ssl_forced: true
+    ssl_forced: false
 
   - domain_names:
       - omada.omni.corp
@@ -55,7 +55,7 @@ nginx_proxy_manager_default_proxy_hosts:
     forward_port: 8043
     ssl_enabled: true
     http2_support: true
-    ssl_forced: true
+    ssl_forced: false
 
   - domain_names:
       - proxy.omni.corp
@@ -64,7 +64,7 @@ nginx_proxy_manager_default_proxy_hosts:
     forward_port: 81
     ssl_enabled: true
     http2_support: true
-    ssl_forced: true
+    ssl_forced: false
 
   - domain_names:
       - site.omni.corp
@@ -89,7 +89,7 @@ nginx_proxy_manager_default_proxy_hosts:
     forward_port: 8080
     ssl_enabled: true
     http2_support: true
-    ssl_forced: true
+    ssl_forced: false
 
   - domain_names:
       - docs.omni.corp
@@ -98,7 +98,7 @@ nginx_proxy_manager_default_proxy_hosts:
     forward_port: 8080
     ssl_enabled: true
     http2_support: true
-    ssl_forced: true
+    ssl_forced: false
 
   - domain_names:
       - media.omni.corp
@@ -107,7 +107,7 @@ nginx_proxy_manager_default_proxy_hosts:
     forward_port: 2283
     ssl_enabled: true
     http2_support: true
-    ssl_forced: true
+    ssl_forced: false
 
   - domain_names:
       - switch.omni.corp
@@ -116,7 +116,7 @@ nginx_proxy_manager_default_proxy_hosts:
     forward_port: 80
     ssl_enabled: true
     http2_support: true
-    ssl_forced: true
+    ssl_forced: false
 
   - domain_names:
       - database.omni.corp
@@ -125,7 +125,7 @@ nginx_proxy_manager_default_proxy_hosts:
     forward_port: 8080
     ssl_enabled: true
     http2_support: true
-    ssl_forced: true
+    ssl_forced: false
 
   - domain_names:
       - router.omni.corp
@@ -134,4 +134,4 @@ nginx_proxy_manager_default_proxy_hosts:
     forward_port: 20128
     ssl_enabled: true
     http2_support: true
-    ssl_forced: true
+    ssl_forced: false

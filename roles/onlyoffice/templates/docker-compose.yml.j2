@@ -4,7 +4,10 @@ services:
     container_name: "{{ onlyoffice_container_name }}"
     restart: unless-stopped
     ports:
-      - "{{ onlyoffice_http_port }}:80/tcp"
+      - "{{ onlyoffice_http_port }}:80"
+    environment:
+      JWT_ENABLED: "{{ onlyoffice_jwt_enabled }}"
+      JWT_SECRET: "{{ onlyoffice_jwt_secret }}"
     volumes:
       - {{ onlyoffice_data_path }}:/var/www/onlyoffice/Data
       - {{ onlyoffice_log_path }}:/var/log/onlyoffice

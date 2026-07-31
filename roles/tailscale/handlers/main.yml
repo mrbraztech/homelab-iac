@@ -1,6 +1,5 @@
 ---
 - name: Restart Tailscale
-  community.docker.docker_compose_v2:
-    project_src: "{{ tailscale_install_dir }}"
+  ansible.builtin.systemd:
+    name: tailscaled
     state: restarted
-  listen: Restart Tailscale

@@ -1,42 +1,67 @@
 ---
-- name: Ensure installation directory exists
-  ansible.builtin.file:
-    path: "{{ tailscale_install_dir }}"
-    state: directory
-    owner: root
-    group: root
-    mode: "0755"
+- name: Gather package facts
+  ansible.builtin.package_facts:
 
-- name: Ensure Tailscale state directory exists
-  ansible.builtin.file:
-    path: "{{ tailscale_data_path }}"
-    state: directory
-    owner: "root"
-    group: "root"
-    mode: "0700"
+- name: Install Tailscale archive keyring
+  when: "'tailscale-archive-keyring' not in ansible_facts.packages"
+  block:
+    - name: Download Tailscale archive keyring package
+      ansible.builtin.get_url:
+        url: "https://pkgs.tailscale.com/stable/debian/{{ ansible_facts.distribution_release }}.deb"
+        dest: /tmp/tailscale-archive-keyring.deb
+        mode: "0644"
 
-- name: Check if Tailscale container already exists
-  community.docker.docker_container_info:
-    name: "{{ tailscale_container_name }}"
-  register: tailscale_existing_container
+    - name: Install Tailscale archive keyring package
+      ansible.builtin.apt:
+        deb: /tmp/tailscale-archive-keyring.deb
 
-- name: Set Tailscale container running fact
-  ansible.builtin.set_fact:
-    tailscale_container_running: >-
-      {{ tailscale_existing_container.exists
-         and tailscale_existing_container.container.State.Status == 'running' }}
-
-- name: Deploy docker-compose.yml
-  ansible.builtin.template:
-    src: docker-compose.yml.j2
-    dest: "{{ tailscale_install_dir }}/docker-compose.yml"
-    owner: root
-    group: root
-    mode: "0644"
-  notify: Restart Tailscale
-
-- name: Ensure Tailscale container is running
-  community.docker.docker_compose_v2:
-    project_src: "{{ tailscale_install_dir }}"
+- name: Configure Tailscale apt repository
+  ansible.builtin.deb822_repository:
+    name: tailscale
+    types: [deb]
+    uris: https://pkgs.tailscale.com/stable/debian
+    suites: "{{ ansible_facts.distribution_release }}"
+    components: [main]
+    signed_by: /usr/share/keyrings/tailscale-archive-keyring.gpg
     state: present
-  when: not tailscale_container_running
+
+- name: Remove legacy one-line Tailscale apt source
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/tailscale.list
+    state: absent
+
+- name: Install Tailscale
+  ansible.builtin.apt:
+    name: tailscale
+    state: present
+    update_cache: true
+  notify: Restart Tailscale
+  when: "'tailscale' not in ansible_facts.packages"
+
+- name: Ensure tailscaled service is enabled and running
+  ansible.builtin.systemd:
+    name: tailscaled
+    enabled: true
+    state: started
+
+- name: Check if Tailscale node is already authenticated
+  ansible.builtin.command: tailscale status
+  register: tailscale_status
+  changed_when: false
+  failed_when: false
+
+- name: Authenticate Tailscale node
+  ansible.builtin.command: >-
+    tailscale up
+    --hostname={{ tailscale_hostname }}
+    --authkey={{ tailscale_auth_key }}
+    {{ tailscale_extra_args }}
+  changed_when: true
+  when: tailscale_status.rc != 0
+
+- name: Enable IPv4 forwarding
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    state: present
+    reload: true

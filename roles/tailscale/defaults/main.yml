@@ -1,8 +1,4 @@
 ---
-tailscale_image: tailscale/tailscale:latest
-tailscale_container_name: tailscale
-tailscale_auth_key: "{{ vault_tailscale_auth_key }}"
-tailscale_data_path: /opt/tailscale/state
-tailscale_install_dir: /opt/tailscale
 tailscale_hostname: vpn
+tailscale_auth_key: "{{ vault_tailscale_auth_key }}"
 tailscale_extra_args: ""
