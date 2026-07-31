@@ -1,0 +1,5 @@
+---
+- name: Restart WireGuard Proton
+  ansible.builtin.systemd:
+    name: "wg-quick@{{ gateway_wg_interface }}"
+    state: restarted

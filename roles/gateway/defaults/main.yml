@@ -1,2 +1,8 @@
 ---
-gateway_install_dir: /opt/gateway
+gateway_wg_interface: proton
+gateway_wg_address: "10.2.0.2/32, 2a07:b944::2:2/128"
+gateway_wg_dns: "10.2.0.1, 2a07:b944::2:1"
+gateway_wg_private_key: "{{ vault_gateway_wg_private_key }}"
+gateway_wg_peer_public_key: "0FnhfTGup0LHPmBCsuDN4tVqlgOaItDwayQokhWapFQ="
+gateway_wg_peer_endpoint: "149.102.251.97:51820"
+gateway_wg_persistent_keepalive: "25"

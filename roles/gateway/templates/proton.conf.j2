@@ -1,0 +1,20 @@
+[Interface]
+# Key for Proton Brazil
+# Bouncing = 10
+# NetShield = 0
+# Moderate NAT = off
+# NAT-PMP (Port Forwarding) = off
+# VPN Accelerator = off
+PrivateKey = {{ gateway_wg_private_key }}
+Address = {{ gateway_wg_address }}
+DNS = {{ gateway_wg_dns }}
+
+[Peer]
+# BR#44
+PublicKey = {{ gateway_wg_peer_public_key }}
+AllowedIPs = 0.0.0.0/0, ::/0
+Endpoint = {{ gateway_wg_peer_endpoint }}
+
+# Uncomment the following line (delete the # symbol) to connect to Proton VPN using IPv6.
+# Endpoint = [2a02:6ea0:d012:2078::10]:51820
+PersistentKeepalive = {{ gateway_wg_persistent_keepalive }}

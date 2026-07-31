@@ -1,8 +1,49 @@
 ---
-- name: Ensure installation directory exists
-  ansible.builtin.file:
-    path: "{{ gateway_install_dir }}"
-    state: directory
+- name: Install WireGuard packages
+  ansible.builtin.apt:
+    name:
+      - wireguard
+      - iptables
+      - iptables-persistent
+    state: present
+    update_cache: true
+
+- name: Deploy WireGuard Proton configuration
+  ansible.builtin.template:
+    src: proton.conf.j2
+    dest: "/etc/wireguard/{{ gateway_wg_interface }}.conf"
     owner: root
     group: root
-    mode: "0755"
+    mode: "0600"
+  notify: Restart WireGuard Proton
+
+- name: Enable and start WireGuard Proton
+  ansible.builtin.systemd:
+    name: "wg-quick@{{ gateway_wg_interface }}"
+    state: started
+    enabled: true
+
+- name: Enable IPv4 forwarding
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    sysctl_file: /etc/sysctl.d/99-router.conf
+    reload: true
+
+- name: Enable IPv6 forwarding
+  ansible.posix.sysctl:
+    name: net.ipv6.conf.all.forwarding
+    value: "1"
+    sysctl_file: /etc/sysctl.d/99-router.conf
+    reload: true
+
+- name: Enable NAT for Proton interface
+  ansible.builtin.iptables:
+    table: nat
+    chain: POSTROUTING
+    out_interface: "{{ gateway_wg_interface }}"
+    jump: MASQUERADE
+
+- name: Persist IPv4 firewall rules
+  ansible.builtin.command: netfilter-persistent save
+  changed_when: false

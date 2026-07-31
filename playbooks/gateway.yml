@@ -5,5 +5,4 @@
   gather_facts: true
   roles:
     - bootstrap
-    - docker
     - gateway
