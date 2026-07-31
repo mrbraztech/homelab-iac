@@ -42,7 +42,7 @@ resource "proxmox_virtual_environment_container" "dns" {
   }
 
   network_interface {
-    name     = "eth0"
+    name = "eth0"
   }
 
   operating_system {

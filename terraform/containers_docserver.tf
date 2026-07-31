@@ -22,6 +22,10 @@ resource "proxmox_virtual_environment_container" "docserver" {
       }
     }
 
+    user_account {
+      keys = [var.ssh_public_key]
+    }
+
   }
 
   cpu {
@@ -39,7 +43,7 @@ resource "proxmox_virtual_environment_container" "docserver" {
   }
 
   network_interface {
-    name     = "eth0"
+    name = "eth0"
   }
 
   operating_system {

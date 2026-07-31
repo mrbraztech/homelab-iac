@@ -22,6 +22,10 @@ resource "proxmox_virtual_environment_container" "ai_rag" {
       }
     }
 
+    user_account {
+      keys = [var.ssh_public_key]
+    }
+
   }
 
   cpu {
@@ -44,7 +48,7 @@ resource "proxmox_virtual_environment_container" "ai_rag" {
   }
 
   network_interface {
-    name     = "eth0"
+    name = "eth0"
   }
 
   operating_system {

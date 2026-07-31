@@ -22,6 +22,10 @@ resource "proxmox_virtual_environment_container" "site" {
       }
     }
 
+    user_account {
+      keys = [var.ssh_public_key]
+    }
+
   }
 
   cpu {
@@ -44,7 +48,7 @@ resource "proxmox_virtual_environment_container" "site" {
   # Applied directly on Proxmox host until BPG provider supports raw LXC entries.
 
   network_interface {
-    name     = "eth0"
+    name = "eth0"
   }
 
   operating_system {

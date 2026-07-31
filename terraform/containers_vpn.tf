@@ -22,6 +22,10 @@ resource "proxmox_virtual_environment_container" "vpn" {
       }
     }
 
+    user_account {
+      keys = [var.ssh_public_key]
+    }
+
   }
 
   cpu {
@@ -43,7 +47,7 @@ resource "proxmox_virtual_environment_container" "vpn" {
   }
 
   network_interface {
-    name     = "eth0"
+    name = "eth0"
   }
 
   operating_system {

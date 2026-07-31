@@ -8,7 +8,7 @@ export TF_VAR_proxmox_user="$(ansible-vault view "$VAULT_FILE" | grep 'vault_pro
 export TF_VAR_proxmox_password="$(ansible-vault view "$VAULT_FILE" | grep 'vault_proxmox_password:' | awk '{print $2}' | tr -d '"')"
 export TF_VAR_minio_access_key="$(ansible-vault view "$VAULT_FILE" | grep 'vault_minio_access_key:' | awk '{print $2}' | tr -d '"')"
 export TF_VAR_minio_secret_key="$(ansible-vault view "$VAULT_FILE" | grep 'vault_minio_secret_key:' | awk '{print $2}' | tr -d '"')"
-export TF_VAR_ssh_public_key="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF6l9hFUF6jc3AentLpKRyUgaE7PeqqW5nUsBGxtti9C homelab"
+export TF_VAR_ssh_public_key="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII0LYBC7E//h9w1bhm6zSyJKkbfsor/frcQO8yHlHMcp opencode@homelab"
 
 # S3 backend (MinIO) credentials
 export AWS_ACCESS_KEY_ID="${TF_VAR_minio_access_key}"
