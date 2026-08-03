@@ -108,6 +108,26 @@
   register: pihole_lists
   when: not ansible_check_mode
 
+- name: Build list of desired blocklist URLs
+  ansible.builtin.set_fact:
+    pihole_desired_urls: "{{ pihole_blocklists | map(attribute='url') | list }}"
+  when: not ansible_check_mode
+
+- name: Remove blocklists not in configuration
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ pihole_http_port }}/api/lists/{{ item.id }}?type=block"
+    method: DELETE
+    headers:
+      sid: "{{ pihole_auth.json.session.sid }}"
+    status_code: [200, 204]
+  loop: "{{ pihole_lists.json.lists | selectattr('type', 'equalto', 'block') | list }}"
+  when:
+    - not ansible_check_mode
+    - pihole_lists.json is defined
+    - pihole_lists.json.lists is defined
+    - item.address not in pihole_desired_urls
+  notify: Update Pi-hole gravity
+
 - name: Add missing blocklists
   ansible.builtin.uri:
     url: "http://127.0.0.1:{{ pihole_http_port }}/api/lists?type=block"
