@@ -16,6 +16,16 @@ frigate_cameras:
     friendly_name: "Quintal dos fundos"
     main_stream: "rtsp://admin:{{ vault_frigate_backyard_password }}@192.168.10.216:554/Streaming/Channels/101"
     sub_stream: "rtsp://admin:{{ vault_frigate_backyard_password }}@192.168.10.216:554/Streaming/Channels/102"
+  hall:
+    enabled: true
+    friendly_name: "Corredor Lateral"
+    main_stream: "rtsp://admin:{{ vault_frigate_backyard_password }}@192.168.10.217:554/Streaming/Channels/101"
+    sub_stream: "rtsp://admin:{{ vault_frigate_backyard_password }}@192.168.10.217:554/Streaming/Channels/102"
+  garage:
+    enabled: true
+    friendly_name: "Garagem"
+    main_stream: "rtsp://admin:{{ vault_frigate_backyard_password }}@192.168.10.218:554/Streaming/Channels/101"
+    sub_stream: "rtsp://admin:{{ vault_frigate_backyard_password }}@192.168.10.218:554/Streaming/Channels/102"
   gate:
     enabled: true
     friendly_name: "Portão"
