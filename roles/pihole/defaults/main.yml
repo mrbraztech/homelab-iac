@@ -20,6 +20,8 @@ pihole_blocklists:
     comment: "Phishing Army blocklist"
   - url: "https://nsfw.oisd.nl"
     comment: "oisd NSFW (adult content)"
+  - url: "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/nsfw.txt"
+    comment: "Hagezi NSFW wildcards"
   - url: "https://raw.githubusercontent.com/Perflyst/PiHoleBlocklist/master/SmartTV-AGH.txt"
     comment: "SmartTV AGH"
   - url: "https://raw.githubusercontent.com/nickspaargaren/dns-over-https/main/pihole-google-projects.txt"
