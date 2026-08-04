@@ -52,7 +52,7 @@ resource "proxmox_virtual_environment_container" "cloud" {
   }
 
   operating_system {
-    template_file_id = ""
+    template_file_id = "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst"
     type             = "debian"
   }
 
@@ -66,6 +66,9 @@ resource "proxmox_virtual_environment_container" "cloud" {
   start_on_boot = true
 
   lifecycle {
-    ignore_changes = [initialization[0].user_account]
+    ignore_changes = [
+      initialization[0].user_account,
+      operating_system[0].template_file_id,
+    ]
   }
 }
