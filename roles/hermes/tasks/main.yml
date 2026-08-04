@@ -1,0 +1,86 @@
+---
+- name: Install system dependencies
+  ansible.builtin.apt:
+    name: "{{ hermes_system_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create hermes user
+  ansible.builtin.user:
+    name: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    home: "/home/{{ hermes_user }}"
+    shell: /bin/bash
+    create_home: true
+    system: false
+
+- name: Create hermes directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    mode: "0755"
+  loop:
+    - "{{ hermes_config_dir }}"
+    - "{{ hermes_data_dir }}"
+    - "{{ hermes_install_path }}"
+
+- name: Install Node.js 18.x from NodeSource
+  ansible.builtin.shell: |
+    set -o pipefail
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+  args:
+    creates: /etc/apt/sources.list.d/nodesource.list
+    executable: /bin/bash
+
+- name: Update apt cache after NodeSource setup
+  ansible.builtin.apt:
+    update_cache: true
+  when: ansible_facts.packages is not defined or 'nodejs' not in ansible_facts.packages
+
+- name: Install Node.js from NodeSource
+  ansible.builtin.apt:
+    name: nodejs
+    state: present
+
+- name: Download and install Hermes Agent
+  become: true
+  become_user: "{{ hermes_user }}"
+  ansible.builtin.shell: |
+    set -o pipefail
+    curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+  args:
+    creates: "/home/{{ hermes_user }}/.hermes/bin/hermes"
+    executable: /bin/bash
+  environment:
+    HOME: "/home/{{ hermes_user }}"
+
+- name: Add hermes to PATH in .bashrc
+  ansible.builtin.lineinfile:
+    path: "/home/{{ hermes_user }}/.bashrc"
+    line: 'export PATH="$HOME/.hermes/bin:$PATH"'
+    state: present
+    create: true
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    mode: "0644"
+
+- name: Create systemd service for Hermes gateway
+  ansible.builtin.template:
+    src: hermes-gateway.service.j2
+    dest: /etc/systemd/system/hermes-gateway.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload systemd
+  when: hermes_gateway_enable
+
+- name: Enable and start Hermes gateway service
+  ansible.builtin.systemd:
+    name: hermes-gateway
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: hermes_gateway_enable

@@ -1,0 +1,8 @@
+---
+- name: Configure Hermes Agent host
+  hosts: hermes
+  become: true
+  gather_facts: true
+  roles:
+    - bootstrap
+    - hermes

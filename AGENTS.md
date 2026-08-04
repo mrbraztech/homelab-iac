@@ -45,6 +45,7 @@ ansible-inventory --graph
 | `docserver.yml` | docserver | OnlyOffice |
 | `media.yml` | media | Immich |
 | `gateway.yml` | gateway | WireGuard exit-node + microsocks SOCKS5 |
+| `hermes.yml` | hermes | Hermes Agent (AI agent with learning loop) |
 | `proxmox.yml` | proxmox | Netdata parent, GPU passthrough for CT 104 (site/Frigate) |
 
 ## Provisioning (OpenTofu)
@@ -65,7 +66,7 @@ State stored in MinIO S3 (`http://192.168.10.12:9000`, bucket `proxmox-ct-state`
 
 Groups in `inventories/lab/hosts.yml`. **All hosts connect as `root`**.
 
-- **`lab`** — Debian CTs (`ai-rag`, `cloud`, `dns`, `docserver`, `gateway`, `media`, `9router`, `omada`, `proxy`, `site`, `tools`, `vpn`). Key `~/.ssh/id_ed25519_opencode`, always via `ProxyJump=proxmox` (`StrictHostKeyChecking=no` set in inventory — no known_hosts needed).
+- **`lab`** — Debian CTs (`ai-rag`, `cloud`, `dns`, `docserver`, `gateway`, `hermes`, `media`, `9router`, `omada`, `proxy`, `site`, `tools`, `vpn`). Key `~/.ssh/id_ed25519_opencode`, always via `ProxyJump=proxmox` (`StrictHostKeyChecking=no` set in inventory — no known_hosts needed).
 - **`infra`** — `nas` (key `~/.ssh/id_ed25519_opencode`), `proxmox` (key `~/.ssh/id_ed25519_proxmox_opencode`). Direct, no jump.
 
 `ai-rag` is in the inventory but has **no playbook** (Terraform-managed only).

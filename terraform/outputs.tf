@@ -118,6 +118,16 @@ output "ninerouter_ipv4" {
   value       = proxmox_virtual_environment_container.ninerouter.ipv4
 }
 
+output "hermes_id" {
+  description = "VMID do container hermes"
+  value       = proxmox_virtual_environment_container.hermes.vm_id
+}
+
+output "hermes_ipv4" {
+  description = "Endereço IPv4 do container hermes"
+  value       = proxmox_virtual_environment_container.hermes.ipv4
+}
+
 output "nas_backup_id" {
   description = "ID do storage NFS nas-backup"
   value       = proxmox_storage_nfs.nas_backup.id
