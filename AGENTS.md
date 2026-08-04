@@ -35,17 +35,17 @@ ansible-inventory --graph
 |---|---|---|
 | `nas.yml` | nas | PostgreSQL, Redis, OMV, MinIO, Netdata child |
 | `tools.yml` | tools | CyberChef, pgAdmin |
-| `9router.yml` | 9router | 9Router + Headroom |
+| `ai-gateway.yml` | ai-gateway | AI gateway (9Router + Headroom) |
 | `proxy.yml` | proxy | Nginx Proxy Manager, internal CA |
 | `dns.yml` | dns | Pi-hole + Unbound |
-| `omada.yml` | omada | Omada Controller |
+| `network.yml` | network | Network controller (Omada) |
 | `site.yml` | site | Frigate NVR |
 | `vpn.yml` | vpn | Tailscale |
 | `cloud.yml` | cloud | Nextcloud |
 | `docserver.yml` | docserver | OnlyOffice |
 | `media.yml` | media | Immich |
 | `gateway.yml` | gateway | WireGuard exit-node + microsocks SOCKS5 |
-| `hermes.yml` | hermes | Hermes Agent (Docker container, AI agent with learning loop) |
+| `agent.yml` | agent | Agent (Hermes AI agent, Docker container, AI agent with learning loop) |
 | `proxmox.yml` | proxmox | Netdata parent, GPU passthrough for CT 104 (site/Frigate) |
 
 ## Provisioning (OpenTofu)
@@ -66,10 +66,8 @@ State stored in MinIO S3 (`http://192.168.10.12:9000`, bucket `proxmox-ct-state`
 
 Groups in `inventories/lab/hosts.yml`. **All hosts connect as `root`**.
 
-- **`lab`** — Debian CTs (`ai-rag`, `cloud`, `dns`, `docserver`, `gateway`, `hermes`, `media`, `9router`, `omada`, `proxy`, `site`, `tools`, `vpn`). Key `~/.ssh/id_ed25519_opencode`, always via `ProxyJump=proxmox` (`StrictHostKeyChecking=no` set in inventory — no known_hosts needed).
+- **`lab`** — Debian CTs (`agent`, `ai-gateway`, `cloud`, `dns`, `docserver`, `gateway`, `media`, `network`, `proxy`, `site`, `tools`, `vpn`). Key `~/.ssh/id_ed25519_opencode`, always via `ProxyJump=proxmox` (`StrictHostKeyChecking=no` set in inventory — no known_hosts needed).
 - **`infra`** — `nas` (key `~/.ssh/id_ed25519_opencode`), `proxmox` (key `~/.ssh/id_ed25519_proxmox_opencode`). Direct, no jump.
-
-`ai-rag` is in the inventory but has **no playbook** (Terraform-managed only).
 
 `proxmox.yml` targets the `proxmox` host in `infra` group, not `lab` — configure Netdata parent + GPU passthrough for Frigate.
 
@@ -94,8 +92,10 @@ ansible-vault encrypt inventories/lab/host_vars/<host>/vault.yml
   - a **short-name** record (e.g. `dns` → `192.168.10.2`) so `ssh root@dns` resolves directly to the CT, and
   - when the CT exports a web service, a `*.omni.corp` FQDN (e.g. `dns.omni.corp`) — but web FQDNs resolve to the NPM proxy (`192.168.10.3`), not the CT, and need a matching NPM reverse proxy host (see `docs/npm-proxy-hosts.md`); the `*.omni.corp` wildcard from the internal CA already covers the certificate.
   Note: `pihole_custom_dns` is applied by the `dns.yml` playbook via the Pi-hole v6 API.
+- **Naming**: CT hostnames, inventory entries, DNS records and role names describe the **functionality**, never the tool/solution name (e.g. the Pi-hole CT is named `dns`, not `pihole`). When the functionality name is unclear, ask the user which name to use before provisioning.
+- **Credentials**: whenever a new CT or service needs a user/password, **always ask the user which credentials to use before creating them** — never auto-generate or pick defaults without asking. Store them in `inventories/lab/host_vars/<host>/vault.yml` with a `vault_` prefix.
 - **Roles**: one per service directory — no generic groupings like `roles/services/`
-- **Role names**: `^[a-z][a-z0-9_]*$` — digit-prefixed services use aliases (e.g. `ninerouter` for `9router`). Role dir, var prefixes, tasks/handlers must use alias consistently.
+- **Role names**: `^[a-z][a-z0-9_]*$` — role dir, var prefixes, tasks/handlers must use the same alias.
 - **YAML**: 2-space indent, LF, truthy `"true"`/`"false"`, max 120 chars
 - **Task names**: descriptive, single responsibility
 - **Shell**: only when no Ansible module exists; document why and ensure idempotency

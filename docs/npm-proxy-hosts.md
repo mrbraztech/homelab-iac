@@ -12,7 +12,7 @@ Current NPM proxy hosts configuration extracted from CT 101 (proxy).
 | containers.omni.corp | 192.168.10.10 | 8006 | Yes | Proxmox web UI |
 | dns.omni.corp | 192.168.10.2 | 80 | No | Pi-hole admin (dns CT) |
 | nas.omni.corp | 192.168.10.12 | 80 | Yes | OpenMediaVault (nas) |
-| omada.omni.corp | 192.168.10.11 | 8043 | Yes | Omada Controller (omada CT) |
+| network.omni.corp | 192.168.10.11 | 8043 | Yes | Network controller (network CT) |
 | proxy.omni.corp | 192.168.10.3 | 81 | Yes | NPM admin interface |
 | site.omni.corp | 192.168.10.13 | 5000 | No | Frigate NVR (site CT) |
 | monitor.omni.corp | 192.168.10.10 | 19999 | No | Netdata (Proxmox host) |
@@ -21,13 +21,15 @@ Current NPM proxy hosts configuration extracted from CT 101 (proxy).
 | media.omni.corp | 192.168.10.17 | 2283 | Yes | Immich (media CT) |
 | switch.omni.corp | 192.168.10.6 | 80 | Yes | Network switch management |
 | database.omni.corp | 192.168.10.14 | 8080 | Yes | PostgreSQL (tools CT) |
-| router.omni.corp | 192.168.10.19 | 20128 | Yes | 9Router (9router CT) |
+| ai-gateway.omni.corp | 192.168.10.18 | 20128 | Yes | AI gateway (ai-gateway CT) |
+| agent.omni.corp | 192.168.10.19 | 9119 | Yes | Agent dashboard (agent CT) |
+| network.omni.corp | 192.168.10.11 | 8043 | Yes | Network controller (network CT) |
 
 ---
 
 ## SSL Certificates
 
-SSL-enabled hosts (containers, nas, omada, proxy, cloud, docs, media, switch, database, router) use custom certificates stored in `/data/custom_ssl/npm-*/`. Force-SSL (HTTP→HTTPS redirect) is **disabled** on all proxy hosts so container-to-container integrations (e.g. OnlyOffice→Nextcloud callbacks) work over plain HTTP without certificate trust issues.
+SSL-enabled hosts (containers, nas, network, proxy, cloud, docs, media, switch, database, ai-gateway, agent) use custom certificates stored in `/data/custom_ssl/npm-*/`. Force-SSL (HTTP→HTTPS redirect) is **disabled** on all proxy hosts so container-to-container integrations (e.g. OnlyOffice→Nextcloud callbacks) work over plain HTTP without certificate trust issues.
 
 ---
 

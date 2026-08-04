@@ -1,9 +1,0 @@
----
-- name: Configure 9router host
-  hosts: 9router
-  become: true
-  gather_facts: true
-  roles:
-    - bootstrap
-    - docker
-    - ninerouter

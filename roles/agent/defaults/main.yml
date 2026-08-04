@@ -1,0 +1,13 @@
+---
+# Hermes Agent Docker deployment settings
+agent_image: nousresearch/hermes-agent:latest
+agent_container_name: hermes
+agent_install_dir: /opt/hermes
+agent_data_dir: /opt/hermes/data
+
+# Web dashboard (port 9119)
+agent_dashboard_enabled: true
+agent_dashboard_host: "0.0.0.0"
+agent_dashboard_port: "9119"
+agent_dashboard_basic_auth_username: "{{ vault_agent_dashboard_username }}"
+agent_dashboard_basic_auth_password: "{{ vault_agent_dashboard_password }}"

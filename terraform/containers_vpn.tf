@@ -67,4 +67,8 @@ resource "proxmox_virtual_environment_container" "vpn" {
   startup {
     order = 1
   }
+
+  lifecycle {
+    ignore_changes = [initialization[0].user_account]
+  }
 }

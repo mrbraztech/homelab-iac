@@ -1,0 +1,13 @@
+---
+network_image: mbentley/omada-controller:6.2.10.17
+network_container_name: omada
+network_http_port: "8088"
+network_https_port: "8043"
+network_portal_https_port: "8843"
+network_puid: "1000"
+network_pgid: "1000"
+network_show_server_logs: "true"
+network_show_mongodb_logs: "false"
+network_data_path: /opt/omada/data
+network_log_path: /opt/omada/log
+network_install_dir: /opt/omada

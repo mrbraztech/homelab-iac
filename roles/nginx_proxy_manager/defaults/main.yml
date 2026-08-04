@@ -49,7 +49,7 @@ nginx_proxy_manager_default_proxy_hosts:
     ssl_forced: false
 
   - domain_names:
-      - omada.omni.corp
+      - network.omni.corp
     forward_scheme: https
     forward_host: 192.168.10.11
     forward_port: 8043
@@ -128,10 +128,19 @@ nginx_proxy_manager_default_proxy_hosts:
     ssl_forced: false
 
   - domain_names:
-      - router.omni.corp
+      - ai-gateway.omni.corp
+    forward_scheme: http
+    forward_host: 192.168.10.18
+    forward_port: 20128
+    ssl_enabled: true
+    http2_support: true
+    ssl_forced: false
+
+  - domain_names:
+      - agent.omni.corp
     forward_scheme: http
     forward_host: 192.168.10.19
-    forward_port: 20128
+    forward_port: 9119
     ssl_enabled: true
     http2_support: true
     ssl_forced: false

@@ -1,0 +1,9 @@
+---
+- name: Configure Network host
+  hosts: network
+  become: true
+  gather_facts: true
+  roles:
+    - bootstrap
+    - docker
+    - network

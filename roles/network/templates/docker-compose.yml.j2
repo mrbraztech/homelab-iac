@@ -1,0 +1,19 @@
+services:
+  omada:
+    image: "{{ network_image }}"
+    container_name: "{{ network_container_name }}"
+    restart: unless-stopped
+    environment:
+      TZ: "{{ bootstrap_timezone }}"
+      PUID: "{{ network_puid }}"
+      PGID: "{{ network_pgid }}"
+      MANAGE_HTTP_PORT: "{{ network_http_port }}"
+      MANAGE_HTTPS_PORT: "{{ network_https_port }}"
+      PORTAL_HTTP_PORT: "{{ network_http_port }}"
+      PORTAL_HTTPS_PORT: "{{ network_portal_https_port }}"
+      SHOW_SERVER_LOGS: "{{ network_show_server_logs }}"
+      SHOW_MONGODB_LOGS: "{{ network_show_mongodb_logs }}"
+    network_mode: host
+    volumes:
+      - {{ network_data_path }}:/opt/tplink/EAPController/data
+      - {{ network_log_path }}:/opt/tplink/EAPController/logs

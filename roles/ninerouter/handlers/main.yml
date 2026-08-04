@@ -1,6 +1,0 @@
----
-- name: Restart 9Router stack
-  community.docker.docker_compose_v2:
-    project_src: "{{ ninerouter_install_dir }}"
-    state: restarted
-  listen: Restart 9Router stack

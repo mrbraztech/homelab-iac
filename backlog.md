@@ -4,7 +4,7 @@
 Gerenciar toda a infraestrutura do Proxmox via Terraform/OpenTofu, permitindo reconstrução total a partir do código.
 
 ## Estado atual
-- **Terraform gerencia:** 3 CTs (tools 102, ninerouter 111, proxy 101)
+- **Terraform gerencia:** todos os CTs (dns 100, proxy 101, tools 102, network 103, site 104, vpn 105, cloud 106, docserver 107, media 108, gateway 109, ai-gateway 110, agent 111)
 - **Proxmox possui:** 12 CTs, 6 storages, 1 backup job
 
 ## Trabalho por tipo
@@ -25,16 +25,17 @@ Gerenciar toda a infraestrutura do Proxmox via Terraform/OpenTofu, permitindo re
 | CT | VMID | CPU | RAM | Disco | IP | Requisitos especiais |
 |----|------|-----|-----|-------|-----|----------------------|
 | dns | 100 | 1 | 128MB | 8GB | 192.168.10.2 | - |
-| omada | 103 | 1 | 2500MB | 8GB | 192.168.10.11 | - |
+| network | 103 | 1 | 2500MB | 8GB | 192.168.10.11 | - |
 | site | 104 | 4 | 8000MB | 32GB | 192.168.10.13 | GPU passthrough /dev/dri |
 | vpn | 105 | 1 | 512MB | 4GB | 192.168.10.4 | TUN device /dev/net/tun |
 | cloud | 106 | 2 | 4000MB | 32GB | 192.168.10.15 | NFS mount: nas-nextcloud |
 | docserver | 107 | 2 | 4000MB | 24GB | 192.168.10.16 | - |
 | media | 108 | 2 | 4000MB | 20GB | 192.168.10.17 | NFS mount: nas-media |
 | gateway | 109 | 2 | 1024MB | 8GB | 192.168.10.5 | - |
-| ai-rag | 110 | 4 | 8192MB | 40GB | 192.168.10.18 | NFS mount: nas-catholic-library |
+| ai-gateway | 110 | 2 | 2048MB | 10GB | 192.168.10.18 | - |
+| agent | 111 | 4 | 8192MB | 60GB | 192.168.10.19 | - |
 
-**Arquivos:** Um por CT (`containers_dns.tf`, `containers_omada.tf`, etc.)
+**Arquivos:** Um por CT (`containers_dns.tf`, `containers_ai_gateway.tf`, etc.)
 
 ### 3. Backup Job (1 recurso)
 
@@ -65,14 +66,14 @@ Adicionar outputs para todos os CTs e storages importados.
 | 2 | - | `chore: remove roadmap from AGENTS.md` | `AGENTS.md` |
 | 3 | - | `feat(terraform): add NFS storage backends` | `storage.tf` |
 | 4 | - | `feat(terraform): add CT dns (100)` | `containers_dns.tf` |
-| 5 | - | `feat(terraform): add CT omada (103)` | `containers_omada.tf` |
+| 5 | - | `feat(terraform): add CT network (103)` | `containers_network.tf` |
 | 6 | - | `feat(terraform): add CT site (104)` | `containers_site.tf` |
 | 7 | - | `feat(terraform): add CT vpn (105)` | `containers_vpn.tf` |
 | 8 | - | `feat(terraform): add CT cloud (106)` | `containers_cloud.tf` |
 | 9 | - | `feat(terraform): add CT docserver (107)` | `containers_docserver.tf` |
 | 10 | - | `feat(terraform): add CT media (108)` | `containers_media.tf` |
 | 11 | - | `feat(terraform): add CT gateway (109)` | `containers_gateway.tf` |
-| 12 | - | `feat(terraform): add CT ai-rag (110)` | `containers_ai_rag.tf` |
+| 12 | - | `feat(terraform): add CT ai-gateway (110)` | `containers_ai_gateway.tf` |
 | 13 | - | `feat(terraform): add monthly backup job` | `backup.tf` |
 | 14 | - | `feat(terraform): add outputs for all resources` | `outputs.tf` |
 | 15 | - | `push` | - |

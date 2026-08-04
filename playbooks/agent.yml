@@ -1,0 +1,9 @@
+---
+- name: Configure Agent host
+  hosts: agent
+  become: true
+  gather_facts: true
+  roles:
+    - bootstrap
+    - docker
+    - agent

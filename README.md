@@ -114,10 +114,10 @@ homelab-iac/
 ├── playbooks/
 │   ├── nas.yml                  # NAS: bootstrap, docker, postgres, redis, omv
 │   ├── tools.yml                # Tools: bootstrap, docker, cyberchef, pgadmin
-│   ├── 9router.yml              # 9Router: bootstrap, docker, ninerouter
+│   ├── ai-gateway.yml            # AI gateway: bootstrap, docker, ai_gateway
 │   ├── proxy.yml                # Proxy: bootstrap, docker, nginx_proxy_manager
 │   ├── dns.yml                  # DNS: bootstrap, docker, pihole
-│   ├── omada.yml                # Omada: bootstrap, docker, omada
+│   ├── network.yml              # Network: bootstrap, docker, network
 │   ├── site.yml                 # Site: bootstrap, docker, frigate
 │   ├── vpn.yml                  # VPN: bootstrap, tailscale
 │   ├── cloud.yml                # Cloud: bootstrap, docker, nextcloud, onlyoffice
@@ -133,10 +133,10 @@ homelab-iac/
 │   ├── omv/                     # OpenMediaVault + NFS/SMB
 │   ├── cyberchef/               # CyberChef (Apache)
 │   ├── pgadmin/                 # pgAdmin4
-│   ├── ninerouter/              # 9Router + Headroom
+│   ├── ai_gateway/               # AI gateway (9Router + Headroom)
 │   ├── nginx_proxy_manager/     # Nginx Proxy Manager
 │   ├── pihole/                  # Pi-hole DNS
-│   ├── omada/                   # TP-Link Omada Controller
+│   ├── network/                 # Network controller (Omada)
 │   ├── frigate/                 # Frigate NVR
 │   ├── tailscale/               # Tailscale (native)
 │   ├── nextcloud/               # Nextcloud
@@ -154,15 +154,15 @@ homelab-iac/
 │   ├── containers_dns.tf        # CT dns (100)
 │   ├── containers_proxy.tf      # CT proxy (101)
 │   ├── containers_tools.tf      # CT tools (102)
-│   ├── containers_omada.tf      # CT omada (103)
+│   ├── containers_network.tf    # CT network (103)
 │   ├── containers_site.tf       # CT site (104)
 │   ├── containers_vpn.tf        # CT vpn (105)
 │   ├── containers_cloud.tf      # CT cloud (106)
 │   ├── containers_docserver.tf  # CT docserver (107)
 │   ├── containers_media.tf      # CT media (108)
 │   ├── containers_gateway.tf    # CT gateway (109)
-│   ├── containers_ai_rag.tf     # CT ai-rag (110)
-│   ├── containers_ninerouter.tf # CT ninerouter (111)
+│   ├── containers_ai_gateway.tf # CT ai-gateway (110)
+│   ├── containers_agent.tf      # CT agent (111)
 │   └── outputs.tf               # All resource outputs
 ├── scripts/
 │   └── export-tf-vars.sh        # Export TF + AWS env vars
@@ -191,15 +191,15 @@ State stored in MinIO S3-compatible storage:
 | CT dns | 100 | 192.168.10.2 | `containers_dns.tf` |
 | CT proxy | 101 | 192.168.10.3 | `containers_proxy.tf` |
 | CT tools | 102 | 192.168.10.14 | `containers_tools.tf` |
-| CT omada | 103 | 192.168.10.11 | `containers_omada.tf` |
+| CT network | 103 | 192.168.10.11 | `containers_network.tf` |
 | CT site | 104 | 192.168.10.13 | `containers_site.tf` |
 | CT vpn | 105 | 192.168.10.4 | `containers_vpn.tf` |
 | CT cloud | 106 | 192.168.10.15 | `containers_cloud.tf` |
 | CT docserver | 107 | 192.168.10.16 | `containers_docserver.tf` |
 | CT media | 108 | 192.168.10.17 | `containers_media.tf` |
 | CT gateway | 109 | 192.168.10.5 | `containers_gateway.tf` |
-| CT ai-rag | 110 | 192.168.10.18 | `containers_ai_rag.tf` |
-| CT ninerouter | 111 | 192.168.10.19 | `containers_ninerouter.tf` |
+| CT ai-gateway | 110 | 192.168.10.18 | `containers_ai_gateway.tf` |
+| CT agent | 111 | 192.168.10.19 | `containers_agent.tf` |
 | Storage nas-backup | — | — | `storage.tf` |
 | Storage nas-nextcloud | — | — | `storage.tf` |
 | Storage nas-media | — | — | `storage.tf` |
@@ -248,17 +248,17 @@ All hosts in `inventories/lab/hosts.yml` under the `lab` group:
 |---|---|---|---|
 | nas | 192.168.10.12 | `nas.yml` | PostgreSQL, Redis, OMV, MinIO |
 | tools | 192.168.10.14 | `tools.yml` | CyberChef, pgAdmin |
-| 9router | 192.168.10.19 | `9router.yml` | 9Router + Headroom |
+| ai-gateway | 192.168.10.18 | `ai-gateway.yml` | AI gateway (9Router + Headroom) |
 | proxy | 192.168.10.3 | `proxy.yml` | Nginx Proxy Manager |
 | dns | 192.168.10.2 | `dns.yml` | Pi-hole |
-| omada | 192.168.10.11 | `omada.yml` | Omada Controller |
+| network | 192.168.10.11 | `network.yml` | Network controller (Omada) |
 | site | 192.168.10.13 | `site.yml` | Frigate NVR |
 | vpn | 192.168.10.4 | `vpn.yml` | Tailscale |
 | cloud | 192.168.10.15 | `cloud.yml` | Nextcloud + OnlyOffice |
 | docserver | 192.168.10.16 | `docserver.yml` | OnlyOffice |
 | media | 192.168.10.17 | `media.yml` | Immich |
+| agent | 192.168.10.19 | `agent.yml` | Agent (Hermes AI agent) |
 | gateway | 192.168.10.5 | `gateway.yml` | WireGuard exit-node + SOCKS5 |
-| ai-rag | 192.168.10.18 | — | (managed via Terraform only) |
 
 ### Run a playbook
 
@@ -348,15 +348,15 @@ Both must pass. Pre-commit hooks run these automatically.
 ├── .4   — VPN (Tailscale)
 ├── .5   — Gateway CT
 ├── .10  — Proxmox host
-├── .11  — Omada Controller
+├── .11  — Network controller (Omada)
 ├── .12  — NAS (PostgreSQL, Redis, OMV, MinIO)
 ├── .13  — Site (Frigate NVR)
 ├── .14  — Tools (CyberChef, pgAdmin)
 ├── .15  — Cloud (Nextcloud + OnlyOffice)
 ├── .16  — DocServer (OnlyOffice)
 ├── .17  — Media (Immich)
-├── .18  — AI-RAG
-└── .19  — 9Router
+├── .18  — AI gateway (9Router + Headroom)
+└── .19  — Agent (Hermes AI agent)
 ```
 
 ---
@@ -378,7 +378,7 @@ Both must pass. Pre-commit hooks run these automatically.
 - **Modules**: always FQCN (`ansible.builtin.copy`, not `copy`)
 - **Variables**: prefix with role name (e.g. `docker_users`, `pihole_password`)
 - **Roles**: one role per service, no generic directories
-- **Role names**: `^[a-z][a-z0-9_]*$` — digit-prefixed services use aliases (e.g. `ninerouter` for `9router`)
+- **Role names**: `^[a-z][a-z0-9_]*$` — role dir, var prefixes, tasks/handlers must use the same alias
 - **YAML**: 2-space indent, LF endings, truthy `"true"` / `"false"`
 - **Max line length**: 120 characters
 - **Terraform files**: one CT per file (`containers_<name>.tf`)

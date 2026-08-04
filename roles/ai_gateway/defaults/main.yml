@@ -1,0 +1,11 @@
+---
+ai_gateway_image: decolua/9router:latest
+ai_gateway_container_name: 9router
+ai_gateway_port: "20128"
+ai_gateway_data_path: /opt/9router/data
+ai_gateway_install_dir: /opt/9router
+ai_gateway_headroom_image: ghcr.io/chopratejas/headroom:latest
+ai_gateway_headroom_container_name: headroom
+ai_gateway_headroom_port: "8787"
+ai_gateway_jwt_secret: change-me-to-a-long-random-secret
+ai_gateway_initial_password: change-me

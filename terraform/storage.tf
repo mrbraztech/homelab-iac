@@ -37,3 +37,12 @@ resource "proxmox_storage_nfs" "nas_catholic_library" {
 
   content = ["rootdir"]
 }
+
+resource "proxmox_storage_nfs" "nas_surveillance" {
+  id     = "nas-surveillance"
+  nodes  = [var.proxmox_node]
+  server = "192.168.10.12"
+  export = "/export/surveillance"
+
+  content = ["rootdir"]
+}

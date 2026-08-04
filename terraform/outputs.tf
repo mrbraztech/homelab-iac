@@ -28,14 +28,14 @@ output "tools_ipv4" {
   value       = proxmox_virtual_environment_container.tools.ipv4
 }
 
-output "omada_id" {
-  description = "VMID do container omada"
-  value       = proxmox_virtual_environment_container.omada.vm_id
+output "network_id" {
+  description = "VMID do container network"
+  value       = proxmox_virtual_environment_container.network.vm_id
 }
 
-output "omada_ipv4" {
-  description = "Endereço IPv4 do container omada"
-  value       = proxmox_virtual_environment_container.omada.ipv4
+output "network_ipv4" {
+  description = "Endereço IPv4 do container network"
+  value       = proxmox_virtual_environment_container.network.ipv4
 }
 
 output "site_id" {
@@ -98,34 +98,24 @@ output "gateway_ipv4" {
   value       = proxmox_virtual_environment_container.gateway.ipv4
 }
 
-output "ai_rag_id" {
-  description = "VMID do container ai-rag"
-  value       = proxmox_virtual_environment_container.ai_rag.vm_id
+output "ai_gateway_id" {
+  description = "VMID do container ai-gateway"
+  value       = proxmox_virtual_environment_container.ai_gateway.vm_id
 }
 
-output "ai_rag_ipv4" {
-  description = "Endereço IPv4 do container ai-rag"
-  value       = proxmox_virtual_environment_container.ai_rag.ipv4
+output "ai_gateway_ipv4" {
+  description = "Endereço IPv4 do container ai-gateway"
+  value       = proxmox_virtual_environment_container.ai_gateway.ipv4
 }
 
-output "ninerouter_id" {
-  description = "VMID do container 9router"
-  value       = proxmox_virtual_environment_container.ninerouter.vm_id
+output "agent_id" {
+  description = "VMID do container agent"
+  value       = proxmox_virtual_environment_container.agent.vm_id
 }
 
-output "ninerouter_ipv4" {
-  description = "Endereço IPv4 do container 9router"
-  value       = proxmox_virtual_environment_container.ninerouter.ipv4
-}
-
-output "hermes_id" {
-  description = "VMID do container hermes"
-  value       = proxmox_virtual_environment_container.hermes.vm_id
-}
-
-output "hermes_ipv4" {
-  description = "Endereço IPv4 do container hermes"
-  value       = proxmox_virtual_environment_container.hermes.ipv4
+output "agent_ipv4" {
+  description = "Endereço IPv4 do container agent"
+  value       = proxmox_virtual_environment_container.agent.ipv4
 }
 
 output "nas_backup_id" {
@@ -146,6 +136,11 @@ output "nas_media_id" {
 output "nas_catholic_library_id" {
   description = "ID do storage NFS nas-catholic-library"
   value       = proxmox_storage_nfs.nas_catholic_library.id
+}
+
+output "nas_surveillance_id" {
+  description = "ID do storage NFS nas-surveillance"
+  value       = proxmox_storage_nfs.nas_surveillance.id
 }
 
 output "backup_job_id" {

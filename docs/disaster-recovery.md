@@ -47,15 +47,15 @@ Se o estado do MinIO foi perdido, reimportar tudo:
 tofu import proxmox_virtual_environment_container.dns pve/100
 tofu import proxmox_virtual_environment_container.proxy pve/101
 tofu import proxmox_virtual_environment_container.tools pve/102
-tofu import proxmox_virtual_environment_container.omada pve/103
+tofu import proxmox_virtual_environment_container.network pve/103
 tofu import proxmox_virtual_environment_container.site pve/104
 tofu import proxmox_virtual_environment_container.vpn pve/105
 tofu import proxmox_virtual_environment_container.cloud pve/106
 tofu import proxmox_virtual_environment_container.docserver pve/107
 tofu import proxmox_virtual_environment_container.media pve/108
 tofu import proxmox_virtual_environment_container.gateway pve/109
-tofu import proxmox_virtual_environment_container.ai_rag pve/110
-tofu import proxmox_virtual_environment_container.ninerouter pve/111
+tofu import proxmox_virtual_environment_container.ai_gateway pve/110
+tofu import proxmox_virtual_environment_container.agent pve/111
 tofu import proxmox_storage_nfs.nas_backup nas-backup
 tofu import proxmox_storage_nfs.nas_nextcloud nas-nextcloud
 tofu import proxmox_storage_nfs.nas_media nas-media
@@ -76,14 +76,15 @@ ansible-playbook playbooks/proxmox.yml --limit proxmox
 ansible-playbook playbooks/dns.yml --limit dns
 ansible-playbook playbooks/proxy.yml --limit proxy
 ansible-playbook playbooks/tools.yml --limit tools
-ansible-playbook playbooks/omada.yml --limit omada
+ansible-playbook playbooks/network.yml --limit network
 ansible-playbook playbooks/site.yml --limit site
 ansible-playbook playbooks/vpn.yml --limit vpn
 ansible-playbook playbooks/cloud.yml --limit cloud
 ansible-playbook playbooks/docserver.yml --limit docserver
 ansible-playbook playbooks/media.yml --limit media
 ansible-playbook playbooks/gateway.yml --limit gateway
-ansible-playbook playbooks/9router.yml --limit 9router
+ansible-playbook playbooks/ai-gateway.yml --limit ai-gateway
+ansible-playbook playbooks/agent.yml --limit agent
 ```
 
 ## 4. Restaurar dados de aplicação

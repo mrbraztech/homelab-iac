@@ -8,7 +8,6 @@ pihole_custom_dns:
       - containers.omni.corp
       - dns.omni.corp
       - nas.omni.corp
-      - omada.omni.corp
       - proxy.omni.corp
       - site.omni.corp
       - monitor.omni.corp
@@ -17,7 +16,9 @@ pihole_custom_dns:
       - media.omni.corp
       - switch.omni.corp
       - database.omni.corp
-      - router.omni.corp
+      - ai-gateway.omni.corp
+      - agent.omni.corp
+      - network.omni.corp
   # Short-name records so `ssh root@<hostname>` resolves directly to each CT.
   - ip: 192.168.10.2
     domains: [dns]
@@ -30,7 +31,7 @@ pihole_custom_dns:
   - ip: 192.168.10.10
     domains: [proxmox]
   - ip: 192.168.10.11
-    domains: [omada]
+    domains: [network]
   - ip: 192.168.10.12
     domains: [nas]
   - ip: 192.168.10.13
@@ -44,8 +45,6 @@ pihole_custom_dns:
   - ip: 192.168.10.17
     domains: [media]
   - ip: 192.168.10.18
-    domains: [ai-rag]
+    domains: [ai-gateway]
   - ip: 192.168.10.19
-    domains: [9router]
-  - ip: 192.168.10.20
-    domains: [hermes]
+    domains: [agent]

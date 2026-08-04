@@ -15,7 +15,6 @@ Public key:
 
 Authorized on:
 - pve01
-- ai-rag
 - nextcloud
 - immich
 - monitoring

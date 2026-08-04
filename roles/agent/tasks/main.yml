@@ -1,0 +1,30 @@
+---
+- name: Ensure hermes install directory exists
+  ansible.builtin.file:
+    path: "{{ agent_install_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Ensure hermes data directory exists
+  ansible.builtin.file:
+    path: "{{ agent_data_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ agent_install_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart hermes
+
+- name: Ensure hermes container is running
+  community.docker.docker_compose_v2:
+    project_src: "{{ agent_install_dir }}"
+    state: present

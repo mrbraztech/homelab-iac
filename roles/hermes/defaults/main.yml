@@ -1,6 +1,0 @@
----
-# Hermes Agent Docker deployment settings
-hermes_image: nousresearch/hermes-agent:latest
-hermes_container_name: hermes
-hermes_install_dir: /opt/hermes
-hermes_data_dir: /opt/hermes/data

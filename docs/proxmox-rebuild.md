@@ -70,14 +70,15 @@ ansible-playbook playbooks/proxmox.yml --limit proxmox
 ansible-playbook playbooks/dns.yml --limit dns
 ansible-playbook playbooks/proxy.yml --limit proxy
 ansible-playbook playbooks/tools.yml --limit tools
-ansible-playbook playbooks/omada.yml --limit omada
+ansible-playbook playbooks/network.yml --limit network
 ansible-playbook playbooks/site.yml --limit site
 ansible-playbook playbooks/vpn.yml --limit vpn
 ansible-playbook playbooks/cloud.yml --limit cloud
 ansible-playbook playbooks/docserver.yml --limit docserver
 ansible-playbook playbooks/media.yml --limit media
 ansible-playbook playbooks/gateway.yml --limit gateway
-ansible-playbook playbooks/9router.yml --limit 9router
+ansible-playbook playbooks/ai-gateway.yml --limit ai-gateway
+ansible-playbook playbooks/agent.yml --limit agent
 ```
 
 ## 7. Restaurar dados

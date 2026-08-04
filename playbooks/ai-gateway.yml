@@ -1,0 +1,9 @@
+---
+- name: Configure ai-gateway host
+  hosts: ai-gateway
+  become: true
+  gather_facts: true
+  roles:
+    - bootstrap
+    - docker
+    - ai_gateway

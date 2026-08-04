@@ -1,0 +1,51 @@
+---
+- name: Ensure installation directory exists
+  ansible.builtin.file:
+    path: "{{ network_install_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Ensure Omada data directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  loop:
+    - "{{ network_data_path }}"
+    - "{{ network_log_path }}"
+
+- name: Check if Omada container already exists
+  community.docker.docker_container_info:
+    name: "{{ network_container_name }}"
+  register: network_existing_container
+
+- name: Set Omada container running fact
+  ansible.builtin.set_fact:
+    network_container_running: >-
+      {{ network_existing_container.exists
+         and network_existing_container.container.State.Status == 'running' }}
+
+- name: Deploy docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ network_install_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Omada
+
+- name: Ensure Omada container is running
+  community.docker.docker_compose_v2:
+    project_src: "{{ network_install_dir }}"
+    state: present
+  when: not network_container_running
+
+- name: Wait for Omada to be ready
+  ansible.builtin.wait_for:
+    port: "{{ network_http_port }}"
+    delay: 10
+    timeout: 60

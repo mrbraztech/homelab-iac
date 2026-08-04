@@ -59,4 +59,8 @@ resource "proxmox_virtual_environment_container" "gateway" {
 
   started       = true
   start_on_boot = true
+
+  lifecycle {
+    ignore_changes = [initialization[0].user_account]
+  }
 }

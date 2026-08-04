@@ -35,7 +35,7 @@
     url: "{{ nginx_proxy_manager_api_url }}/nginx/proxy-hosts{% if item.id is defined %}/{{ item.id }}{% endif %}"
     method: "{% if item.id is defined %}PUT{% else %}POST{% endif %}"
     headers:
-      Authorization: "Bearer {{ npm_auth.json.token }}"
+      Authorization: "Bearer {{ nginx_proxy_manager_auth.json.token }}"
     body_format: json
     body:
       domain_names: "{{ item.domain_names }}"

@@ -1,0 +1,26 @@
+---
+services:
+  9router:
+    image: {{ ai_gateway_image }}
+    container_name: {{ ai_gateway_container_name }}
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - {{ ai_gateway_data_path }}:/app/data
+    environment:
+      DATA_DIR: /app/data
+      PORT: "20128"
+      HOSTNAME: "0.0.0.0"
+      NODE_ENV: production
+      HEADROOM_URL: http://127.0.0.1:8787
+      JWT_SECRET: {{ ai_gateway_jwt_secret }}
+      INITIAL_PASSWORD: {{ ai_gateway_initial_password }}
+      REQUIRE_API_KEY: "false"
+    depends_on:
+      - headroom
+
+  headroom:
+    image: {{ ai_gateway_headroom_image }}
+    container_name: {{ ai_gateway_headroom_container_name }}
+    restart: unless-stopped
+    network_mode: host

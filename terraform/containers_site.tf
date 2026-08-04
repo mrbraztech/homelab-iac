@@ -10,6 +10,7 @@ resource "proxmox_virtual_environment_container" "site" {
   features {
     nesting = true
     keyctl  = false
+    mount   = ["nfs"]
   }
 
   initialization {
@@ -42,6 +43,11 @@ resource "proxmox_virtual_environment_container" "site" {
     size         = 32
   }
 
+  mount_point {
+    volume = "/mnt/pve/nas-surveillance"
+    path   = "/mnt/surveillance"
+  }
+
   # GPU passthrough for Frigate (/dev/dri) requires manual LXC config:
   #   lxc.cgroup2.devices.allow: c 226:* rwm
   #   lxc.mount.entry: /dev/dri dev/dri none bind,optional,create=dir
@@ -52,7 +58,7 @@ resource "proxmox_virtual_environment_container" "site" {
   }
 
   operating_system {
-    template_file_id = ""
+    template_file_id = "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst"
     type             = "debian"
   }
 
@@ -64,4 +70,8 @@ resource "proxmox_virtual_environment_container" "site" {
 
   started       = true
   start_on_boot = true
+
+  lifecycle {
+    ignore_changes = [initialization[0].user_account]
+  }
 }
