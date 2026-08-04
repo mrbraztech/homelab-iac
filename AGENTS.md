@@ -33,7 +33,7 @@ ansible-inventory --graph
 
 | Playbook | Host | Services |
 |---|---|---|
-| `nas.yml` | nas | PostgreSQL, Redis, OMV, MinIO, Netdata |
+| `nas.yml` | nas | PostgreSQL, Redis, OMV, MinIO, Netdata child |
 | `tools.yml` | tools | CyberChef, pgAdmin |
 | `9router.yml` | 9router | 9Router + Headroom |
 | `proxy.yml` | proxy | Nginx Proxy Manager, internal CA |
@@ -45,7 +45,7 @@ ansible-inventory --graph
 | `docserver.yml` | docserver | OnlyOffice |
 | `media.yml` | media | Immich |
 | `gateway.yml` | gateway | WireGuard exit-node + microsocks SOCKS5 |
-| `proxmox.yml` | proxmox | Netdata, GPU passthrough |
+| `proxmox.yml` | proxmox | Netdata parent, GPU passthrough for CT 104 (site/Frigate) |
 
 ## Provisioning (OpenTofu)
 
@@ -59,16 +59,18 @@ tofu validate
 tofu import proxmox_virtual_environment_container.<name> pve/<vmid>
 ```
 
-State stored in MinIO S3 (`http://192.168.10.12:9000`, bucket `proxmox-ct-state`). One CT per file (`containers_<name>.tf`). `var.ssh_public_key` is hardcoded in `scripts/export-tf-vars.sh` — if your SSH key changes, update it there and the inventory keys below.
+State stored in MinIO S3 (`http://192.168.10.12:9000`, bucket `proxmox-ct-state`, key `homelab/terraform.tfstate`). One CT per file (`containers_<name>.tf`). `var.ssh_public_key` is hardcoded in `scripts/export-tf-vars.sh` — if your SSH key changes, update it there.
 
 ## Inventory
 
-Groups in `inventories/lab/hosts.yml`. **All hosts connect as `root`** (the old `ansible` user is gone).
+Groups in `inventories/lab/hosts.yml`. **All hosts connect as `root`**.
 
 - **`lab`** — Debian CTs (`ai-rag`, `cloud`, `dns`, `docserver`, `gateway`, `media`, `9router`, `omada`, `proxy`, `site`, `tools`, `vpn`). Key `~/.ssh/id_ed25519_opencode`, always via `ProxyJump=proxmox` (`StrictHostKeyChecking=no` set in inventory — no known_hosts needed).
 - **`infra`** — `nas` (key `~/.ssh/id_ed25519_opencode`), `proxmox` (key `~/.ssh/id_ed25519_proxmox_opencode`). Direct, no jump.
 
 `ai-rag` is in the inventory but has **no playbook** (Terraform-managed only).
+
+`proxmox.yml` targets the `proxmox` host in `infra` group, not `lab` — configure Netdata parent + GPU passthrough for Frigate.
 
 ## Vault
 
@@ -99,9 +101,10 @@ ansible-vault encrypt inventories/lab/host_vars/<host>/vault.yml
 
 - `collections/ansible_collections/` is vendored locally — excluded from linters. Never edit.
 - `lab` hosts are only reachable via `ProxyJump=proxmox` — connection fails if proxmox is down or unreachable.
-- First provision: `bootstrap_ssh_password_authentication: true` in `inventories/lab/group_vars/all.yml` (password needed for first SSH key push). Default in the role is `false`.
-- `check.yml` targets `all` (not just `lab`).
-- Avoid committing `opencode.json` — it's in `.gitignore` (contains API keys).
+- First provision: `bootstrap_ssh_password_authentication: true` in `inventories/lab/group_vars/all.yml` (password needed for first SSH key push). Role default is `false`.
+- `check.yml` targets `all` (includes both `lab` and `infra` groups).
+- `nas.yml` has a second play for PostgreSQL database setup (users, databases, extensions) — runs `community.postgresql.*` modules after roles complete.
+- OpenTofu provider: `bpg/proxmox` version `~> 0.111` (check `terraform/providers.tf` before upgrading).
 
 ## Definition of Done
 
