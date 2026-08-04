@@ -24,6 +24,17 @@
     mode: "0644"
   notify: Restart hermes
 
+- name: Ensure hermes AI gateway API key in env file
+  ansible.builtin.lineinfile:
+    path: "{{ agent_data_dir }}/.env"
+    regexp: "^HERMES_CUSTOM_AI_GATEWAY_OMNI_CORP_API_KEY=.*$"
+    line: "HERMES_CUSTOM_AI_GATEWAY_OMNI_CORP_API_KEY={{ agent_ai_gateway_api_key }}"
+    owner: "10000"
+    group: "10000"
+    mode: "0600"
+    create: true
+  notify: Restart hermes
+
 - name: Ensure hermes container is running
   community.docker.docker_compose_v2:
     project_src: "{{ agent_install_dir }}"

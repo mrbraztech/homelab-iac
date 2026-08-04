@@ -18,6 +18,9 @@ agent_api_server_host: "0.0.0.0"
 agent_api_server_port: "8642"
 agent_api_server_key: "{{ vault_agent_api_server_key }}"
 
+# AI gateway (9Router) access for hermes inference
+agent_ai_gateway_api_key: "{{ vault_agent_ai_gateway_api_key }}"
+
 # Container resource limits
 agent_memory_limit: "4G"
 agent_cpus_limit: "2.0"
