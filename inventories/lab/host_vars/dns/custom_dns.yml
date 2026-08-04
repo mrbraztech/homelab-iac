@@ -1,4 +1,6 @@
 ---
+# Web services behind NPM proxy: FQDNs resolve to the proxy (192.168.10.3),
+# NPM routes by Host header.
 pihole_custom_dns:
   - ip: 192.168.10.3
     domains:
@@ -16,3 +18,34 @@ pihole_custom_dns:
       - switch.omni.corp
       - database.omni.corp
       - router.omni.corp
+  # Short-name records so `ssh root@<hostname>` resolves directly to each CT.
+  - ip: 192.168.10.2
+    domains: [dns]
+  - ip: 192.168.10.3
+    domains: [proxy]
+  - ip: 192.168.10.4
+    domains: [vpn]
+  - ip: 192.168.10.5
+    domains: [gateway]
+  - ip: 192.168.10.10
+    domains: [proxmox]
+  - ip: 192.168.10.11
+    domains: [omada]
+  - ip: 192.168.10.12
+    domains: [nas]
+  - ip: 192.168.10.13
+    domains: [site]
+  - ip: 192.168.10.14
+    domains: [tools]
+  - ip: 192.168.10.15
+    domains: [cloud]
+  - ip: 192.168.10.16
+    domains: [docserver]
+  - ip: 192.168.10.17
+    domains: [media]
+  - ip: 192.168.10.18
+    domains: [ai-rag]
+  - ip: 192.168.10.19
+    domains: [9router]
+  - ip: 192.168.10.20
+    domains: [hermes]
