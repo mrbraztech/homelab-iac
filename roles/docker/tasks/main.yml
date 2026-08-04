@@ -28,3 +28,8 @@
   tags:
     - docker
     - users
+
+# Run pending handlers (e.g. Restart Docker) before service roles start, so a
+# daemon restart cannot interrupt an image pull/container creation mid-flight.
+- name: Flush pending Docker handlers
+  ansible.builtin.meta: flush_handlers
