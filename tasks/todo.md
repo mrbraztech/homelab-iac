@@ -37,5 +37,5 @@
 - [x] ansible all -m ping (14 hosts SUCCESS); tofu plan 0 changes
 - [x] Testar https://ai-gateway.omni.corp (307), agent.omni.corp (302), network.omni.corp (200)
 - [x] DNS: short-names + FQDNs resolvendo
-- [ ] yamllint, ansible-lint, git diff, commit, push
+- [x] yamllint, ansible-lint, git diff, commit, push
 - [ ] Limpeza manual: proxy hosts antigos no NPM (fora do repo)
