@@ -21,6 +21,13 @@ agent_api_server_key: "{{ vault_agent_api_server_key }}"
 # AI gateway (9Router) access for hermes inference
 agent_ai_gateway_api_key: "{{ vault_agent_ai_gateway_api_key }}"
 
+# Telegram bot
+agent_telegram_bot_token: "{{ vault_agent_telegram_bot_token }}"
+agent_telegram_allowed_users: "{{ vault_agent_telegram_allowed_users }}"
+# Egress to Telegram is IPv4-filtered on the lab; api.telegram.org resolves to
+# an unreachable IPv6 address, so pin the reachable IPv4 fallback IP.
+agent_telegram_fallback_ips: "149.154.167.220"
+
 # Container resource limits
 agent_memory_limit: "4G"
 agent_cpus_limit: "2.0"

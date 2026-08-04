@@ -35,6 +35,39 @@
     create: true
   notify: Restart hermes
 
+- name: Ensure hermes Telegram bot token in env file
+  ansible.builtin.lineinfile:
+    path: "{{ agent_data_dir }}/.env"
+    regexp: "^TELEGRAM_BOT_TOKEN=.*$"
+    line: "TELEGRAM_BOT_TOKEN={{ agent_telegram_bot_token }}"
+    owner: "10000"
+    group: "10000"
+    mode: "0600"
+    create: true
+  notify: Restart hermes
+
+- name: Ensure hermes Telegram allowed users in env file
+  ansible.builtin.lineinfile:
+    path: "{{ agent_data_dir }}/.env"
+    regexp: "^TELEGRAM_ALLOWED_USERS=.*$"
+    line: "TELEGRAM_ALLOWED_USERS={{ agent_telegram_allowed_users }}"
+    owner: "10000"
+    group: "10000"
+    mode: "0600"
+    create: true
+  notify: Restart hermes
+
+- name: Ensure hermes Telegram fallback IPs in env file
+  ansible.builtin.lineinfile:
+    path: "{{ agent_data_dir }}/.env"
+    regexp: "^TELEGRAM_FALLBACK_IPS=.*$"
+    line: "TELEGRAM_FALLBACK_IPS={{ agent_telegram_fallback_ips }}"
+    owner: "10000"
+    group: "10000"
+    mode: "0600"
+    create: true
+  notify: Restart hermes
+
 - name: Ensure hermes container is running
   community.docker.docker_compose_v2:
     project_src: "{{ agent_install_dir }}"
