@@ -11,3 +11,13 @@ agent_dashboard_host: "0.0.0.0"
 agent_dashboard_port: "9119"
 agent_dashboard_basic_auth_username: "{{ vault_agent_dashboard_username }}"
 agent_dashboard_basic_auth_password: "{{ vault_agent_dashboard_password }}"
+
+# OpenAI-compatible API server (port 8642)
+agent_api_server_enabled: true
+agent_api_server_host: "0.0.0.0"
+agent_api_server_port: "8642"
+agent_api_server_key: "{{ vault_agent_api_server_key }}"
+
+# Container resource limits
+agent_memory_limit: "4G"
+agent_cpus_limit: "2.0"

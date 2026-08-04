@@ -3,8 +3,7 @@ services:
     image: "{{ agent_image }}"
     container_name: "{{ agent_container_name }}"
     restart: unless-stopped
-    stdin_open: true
-    tty: true
+    command: gateway run
     environment:
       HERMES_HOME: /opt/data
 {% if agent_dashboard_enabled %}
@@ -14,7 +13,20 @@ services:
       HERMES_DASHBOARD_BASIC_AUTH_USERNAME: "{{ agent_dashboard_basic_auth_username }}"
       HERMES_DASHBOARD_BASIC_AUTH_PASSWORD: "{{ agent_dashboard_basic_auth_password }}"
 {% endif %}
+{% if agent_api_server_enabled %}
+      API_SERVER_ENABLED: "true"
+      API_SERVER_HOST: "{{ agent_api_server_host }}"
+      API_SERVER_KEY: "{{ agent_api_server_key }}"
+{% endif %}
     ports:
       - "{{ agent_dashboard_port }}:{{ agent_dashboard_port }}"
+{% if agent_api_server_enabled %}
+      - "{{ agent_api_server_port }}:{{ agent_api_server_port }}"
+{% endif %}
     volumes:
       - ./data:/opt/data
+    deploy:
+      resources:
+        limits:
+          memory: "{{ agent_memory_limit }}"
+          cpus: "{{ agent_cpus_limit }}"
