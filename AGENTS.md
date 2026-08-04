@@ -89,6 +89,7 @@ ansible-vault encrypt inventories/lab/host_vars/<host>/vault.yml
 - **Variables**: prefix with role name (e.g. `bootstrap_timezone`, `docker_users`)
 - **Defaults**: `defaults/main.yml` for overridable; `vars/` only for fixed values
 - **Database**: never SQLite/file-based stores — all apps that need a database must use the central PostgreSQL on `nas` (`nas.yml`, second play creates users/databases)
+- **Deployment**: new provisionings must prefer Docker containers over bare-metal installs by default — switch to bare-metal only when there is a clear, objective reason (e.g. no official image, host-level requirements). Always confirm exceptions with the user before implementing them.
 - **Roles**: one per service directory — no generic groupings like `roles/services/`
 - **Role names**: `^[a-z][a-z0-9_]*$` — digit-prefixed services use aliases (e.g. `ninerouter` for `9router`). Role dir, var prefixes, tasks/handlers must use alias consistently.
 - **YAML**: 2-space indent, LF, truthy `"true"`/`"false"`, max 120 chars
