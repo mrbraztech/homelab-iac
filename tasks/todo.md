@@ -31,11 +31,11 @@
 - [x] dns.yml (DNS novos via Pi-hole API)
 - [x] proxy.yml (proxy hosts novos + wildcard)
 - [x] ai-gateway.yml, agent.yml, network.yml
-- [x] check.yml (falha pré-existente: inject_facts_as_vars=False; ping all OK)
+- [x] check.yml corrigido (ansible_facts.* com inject_facts_as_vars=False); 14 hosts OK
 
 ## Fase 6 — Verificação e commit
 - [x] ansible all -m ping (14 hosts SUCCESS); tofu plan 0 changes
 - [x] Testar https://ai-gateway.omni.corp (307), agent.omni.corp (302), network.omni.corp (200)
 - [x] DNS: short-names + FQDNs resolvendo
 - [x] yamllint, ansible-lint, git diff, commit, push
-- [ ] Limpeza manual: proxy hosts antigos no NPM (fora do repo)
+- [x] Limpeza NPM: proxy hosts antigos removidos via API (router/hermes/omada.omni.corp)
