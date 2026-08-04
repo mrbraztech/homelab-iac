@@ -1,4 +1,5 @@
 ---
-- name: Reload systemd
-  ansible.builtin.systemd:
-    daemon_reload: true
+- name: Restart hermes
+  community.docker.docker_compose_v2:
+    project_src: "{{ hermes_install_dir }}"
+    state: restarted

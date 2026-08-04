@@ -1,0 +1,9 @@
+services:
+  hermes:
+    image: "{{ hermes_image }}"
+    container_name: "{{ hermes_container_name }}"
+    restart: unless-stopped
+    environment:
+      HERMES_HOME: /opt/data
+    volumes:
+      - ./data:/opt/data
