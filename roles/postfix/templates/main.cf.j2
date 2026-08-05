@@ -1,0 +1,19 @@
+# {{ ansible_managed }}
+smtpd_relay_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination
+myhostname = {{ postfix_myhostname }}
+mydomain = {{ postfix_mydomain }}
+myorigin = $mydomain
+inet_interfaces = all
+inet_protocols = ipv4
+mydestination = $myhostname, localhost.$mydomain, localhost
+mynetworks = {{ postfix_mynetworks }}
+relayhost = {{ postfix_relayhost }}
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+smtp_sasl_security_options = noanonymous
+smtp_tls_security_level = encrypt
+smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
+smtp_generic_maps = regexp:/etc/postfix/generic
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+compatibility_level = 3.6

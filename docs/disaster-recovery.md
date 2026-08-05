@@ -53,9 +53,10 @@ tofu import proxmox_virtual_environment_container.vpn pve/105
 tofu import proxmox_virtual_environment_container.cloud pve/106
 tofu import proxmox_virtual_environment_container.docserver pve/107
 tofu import proxmox_virtual_environment_container.media pve/108
-tofu import proxmox_virtual_environment_container.gateway pve/109
+tofu import proxmox_virtual_environment_container.mail pve/109
 tofu import proxmox_virtual_environment_container.ai_gateway pve/110
 tofu import proxmox_virtual_environment_container.agent pve/111
+tofu import proxmox_virtual_environment_container.vault pve/112
 tofu import proxmox_storage_nfs.nas_backup nas-backup
 tofu import proxmox_storage_nfs.nas_nextcloud nas-nextcloud
 tofu import proxmox_storage_nfs.nas_media nas-media
@@ -82,9 +83,10 @@ ansible-playbook playbooks/vpn.yml --limit vpn
 ansible-playbook playbooks/cloud.yml --limit cloud
 ansible-playbook playbooks/docserver.yml --limit docserver
 ansible-playbook playbooks/media.yml --limit media
-ansible-playbook playbooks/gateway.yml --limit gateway
+ansible-playbook playbooks/mail.yml --limit mail
 ansible-playbook playbooks/ai-gateway.yml --limit ai-gateway
 ansible-playbook playbooks/agent.yml --limit agent
+ansible-playbook playbooks/vault.yml --limit vault
 ```
 
 ## 4. Restaurar dados de aplicação

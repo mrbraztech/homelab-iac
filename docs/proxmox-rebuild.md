@@ -61,7 +61,7 @@ tofu init
 tofu apply
 ```
 
-Isso cria todos os 12 CTs (VMIDs 100-111), 4 NFS storages e 1 backup job.
+Isso cria todos os 13 CTs (VMIDs 100-112), 4 NFS storages e 1 backup job.
 
 ## 6. Configurar CTs com Ansible
 
@@ -76,9 +76,10 @@ ansible-playbook playbooks/vpn.yml --limit vpn
 ansible-playbook playbooks/cloud.yml --limit cloud
 ansible-playbook playbooks/docserver.yml --limit docserver
 ansible-playbook playbooks/media.yml --limit media
-ansible-playbook playbooks/gateway.yml --limit gateway
+ansible-playbook playbooks/mail.yml --limit mail
 ansible-playbook playbooks/ai-gateway.yml --limit ai-gateway
 ansible-playbook playbooks/agent.yml --limit agent
+ansible-playbook playbooks/vault.yml --limit vault
 ```
 
 ## 7. Restaurar dados

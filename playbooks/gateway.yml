@@ -1,8 +1,0 @@
----
-- name: Configure Gateway host
-  hosts: gateway
-  become: true
-  gather_facts: true
-  roles:
-    - bootstrap
-    - gateway

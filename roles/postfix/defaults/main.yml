@@ -1,0 +1,10 @@
+---
+# Postfix smarthost (SMTP2GO relay) settings
+postfix_relayhost: "[mail.smtp2go.com]:587"
+postfix_myhostname: "mail.omni.corp"
+postfix_mydomain: "omni.corp"
+postfix_mynetworks: "127.0.0.0/8 192.168.10.0/24"
+postfix_smtp_username: "{{ vault_postfix_smtp_username }}"
+postfix_smtp_password: "{{ vault_postfix_smtp_password }}"
+postfix_sender: "{{ vault_postfix_sender }}"
+postfix_root_alias: "{{ vault_postfix_root_alias }}"

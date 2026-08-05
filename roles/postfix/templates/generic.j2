@@ -1,0 +1,3 @@
+# {{ ansible_managed }}
+# Rewrite every outbound sender to the verified SMTP2GO sender.
+/^.*$/ {{ postfix_sender }}

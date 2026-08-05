@@ -1,8 +1,8 @@
-resource "proxmox_virtual_environment_container" "gateway" {
+resource "proxmox_virtual_environment_container" "mail" {
   node_name    = var.proxmox_node
   vm_id        = 109
   unprivileged = true
-  description  = "Gateway / reverse proxy"
+  description  = "Mail relay (Postfix smarthost via SMTP2GO)"
 
   timeout_create = 1800
   timeout_delete = 60
@@ -13,7 +13,7 @@ resource "proxmox_virtual_environment_container" "gateway" {
   }
 
   initialization {
-    hostname = "gateway"
+    hostname = "mail"
 
     ip_config {
       ipv4 {

@@ -1,0 +1,34 @@
+---
+# Vaultwarden Docker deployment settings
+vaultwarden_image: vaultwarden/server:latest
+vaultwarden_container_name: vaultwarden
+vaultwarden_install_dir: /opt/vaultwarden
+vaultwarden_data_dir: /opt/vaultwarden/data
+vaultwarden_http_port: "80"
+
+# Public URL (behind NPM proxy)
+vaultwarden_domain: "https://vault.omni.corp"
+
+# Central PostgreSQL on nas
+vaultwarden_db_host: "192.168.10.12"
+vaultwarden_db_port: "5432"
+vaultwarden_db_name: vaultwarden
+vaultwarden_db_user: vaultwarden
+vaultwarden_db_password: "{{ vault_vaultwarden_db_password }}"
+
+# Admin panel (/admin)
+vaultwarden_admin_token: "{{ vault_vaultwarden_admin_token }}"
+
+# Signups enabled by design
+vaultwarden_signups_allowed: "true"
+
+# SMTP via the lab smarthost (mail CT)
+vaultwarden_smtp_host: "192.168.10.5"
+vaultwarden_smtp_port: "25"
+vaultwarden_smtp_security: "off"
+vaultwarden_smtp_from: "homelab@mrbraz.net"
+vaultwarden_smtp_from_name: "Homelab"
+
+# Container resource limits
+vaultwarden_memory_limit: "1G"
+vaultwarden_cpus_limit: "1.0"

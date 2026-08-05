@@ -1,0 +1,5 @@
+---
+- name: Restart Vaultwarden
+  community.docker.docker_compose_v2:
+    project_src: "{{ vaultwarden_install_dir }}"
+    state: restarted

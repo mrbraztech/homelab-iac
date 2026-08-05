@@ -1,0 +1,40 @@
+---
+- name: Configure Mail host
+  hosts: mail
+  become: true
+  gather_facts: true
+  # One-time cleanup: this CT was the former gateway (WireGuard exit-node +
+  # microsocks SOCKS5). In-place rename keeps the old services installed.
+  pre_tasks:
+    - name: Gather service facts
+      ansible.builtin.service_facts:
+
+    - name: Stop and disable legacy gateway services
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop:
+        - microsocks
+        - wg-quick@proton
+      when: item in ansible_facts.services
+
+    - name: Remove legacy gateway packages
+      ansible.builtin.apt:
+        name:
+          - microsocks
+          - wireguard
+          - iptables-persistent
+        state: absent
+
+    - name: Remove legacy gateway configuration
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/wireguard/proton.conf
+        - /etc/systemd/system/microsocks.service
+        - /etc/sysctl.d/99-router.conf
+  roles:
+    - bootstrap
+    - postfix

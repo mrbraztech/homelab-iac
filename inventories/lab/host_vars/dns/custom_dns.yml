@@ -19,6 +19,7 @@ pihole_custom_dns:
       - ai-gateway.omni.corp
       - agent.omni.corp
       - network.omni.corp
+      - vault.omni.corp
   # Short-name records so `ssh root@<hostname>` resolves directly to each CT.
   - ip: 192.168.10.2
     domains: [dns]
@@ -27,7 +28,7 @@ pihole_custom_dns:
   - ip: 192.168.10.4
     domains: [vpn]
   - ip: 192.168.10.5
-    domains: [gateway]
+    domains: [mail]
   - ip: 192.168.10.10
     domains: [proxmox]
   - ip: 192.168.10.11
@@ -48,3 +49,5 @@ pihole_custom_dns:
     domains: [ai-gateway]
   - ip: 192.168.10.19
     domains: [agent]
+  - ip: 192.168.10.20
+    domains: [vault]

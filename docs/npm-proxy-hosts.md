@@ -24,12 +24,13 @@ Current NPM proxy hosts configuration extracted from CT 101 (proxy).
 | ai-gateway.omni.corp | 192.168.10.18 | 20128 | Yes | AI gateway (ai-gateway CT) |
 | agent.omni.corp | 192.168.10.19 | 9119 | Yes | Agent dashboard (agent CT) |
 | network.omni.corp | 192.168.10.11 | 8043 | Yes | Network controller (network CT) |
+| vault.omni.corp | 192.168.10.20 | 80 | Yes | Vaultwarden (vault CT) |
 
 ---
 
 ## SSL Certificates
 
-SSL-enabled hosts (containers, nas, network, proxy, cloud, docs, media, switch, database, ai-gateway, agent) use custom certificates stored in `/data/custom_ssl/npm-*/`. Force-SSL (HTTP→HTTPS redirect) is **disabled** on all proxy hosts so container-to-container integrations (e.g. OnlyOffice→Nextcloud callbacks) work over plain HTTP without certificate trust issues.
+SSL-enabled hosts (containers, nas, network, proxy, cloud, docs, media, switch, database, ai-gateway, agent, vault) use custom certificates stored in `/data/custom_ssl/npm-*/`. Force-SSL (HTTP→HTTPS redirect) is **disabled** on all proxy hosts so container-to-container integrations (e.g. OnlyOffice→Nextcloud callbacks) work over plain HTTP without certificate trust issues.
 
 ---
 

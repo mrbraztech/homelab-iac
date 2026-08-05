@@ -28,12 +28,16 @@
         password: "{{ vault_immich_password }}"
       - name: nextcloud
         password: "{{ vault_nextcloud_password }}"
+      - name: vaultwarden
+        password: "{{ vault_vaultwarden_password }}"
 
     postgres_setup_databases:
       - name: immich
         owner: immich
       - name: nextcloud
         owner: nextcloud
+      - name: vaultwarden
+        owner: vaultwarden
 
     postgres_setup_extensions:
       - database: immich

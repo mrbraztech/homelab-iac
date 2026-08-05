@@ -1,0 +1,39 @@
+---
+- name: Ensure Vaultwarden install directory exists
+  ansible.builtin.file:
+    path: "{{ vaultwarden_install_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Ensure Vaultwarden data directory exists
+  ansible.builtin.file:
+    path: "{{ vaultwarden_data_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy Vaultwarden env file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ vaultwarden_install_dir }}/.env"
+    owner: root
+    group: root
+    mode: "0600"
+  notify: Restart Vaultwarden
+
+- name: Deploy docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ vaultwarden_install_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Vaultwarden
+
+- name: Ensure Vaultwarden container is running
+  community.docker.docker_compose_v2:
+    project_src: "{{ vaultwarden_install_dir }}"
+    state: present

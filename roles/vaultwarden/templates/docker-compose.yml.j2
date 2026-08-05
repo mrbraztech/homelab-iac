@@ -1,0 +1,15 @@
+services:
+  vaultwarden:
+    image: "{{ vaultwarden_image }}"
+    container_name: "{{ vaultwarden_container_name }}"
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "{{ vaultwarden_http_port }}:80"
+    volumes:
+      - ./data:/data
+    deploy:
+      resources:
+        limits:
+          memory: "{{ vaultwarden_memory_limit }}"
+          cpus: "{{ vaultwarden_cpus_limit }}"

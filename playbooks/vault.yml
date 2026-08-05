@@ -1,0 +1,9 @@
+---
+- name: Configure Vault host
+  hosts: vault
+  become: true
+  gather_facts: true
+  roles:
+    - bootstrap
+    - docker
+    - vaultwarden

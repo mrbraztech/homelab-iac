@@ -15,7 +15,7 @@ Both must pass. `ansible-lint` runs at `profile: production` (stricter than defa
 
 ## Playbooks
 
-All in `playbooks/`. Standard flow: `bootstrap` → `docker` → service roles. Exceptions (no `docker` role): `vpn.yml` (native Tailscale), `gateway.yml` (bare-metal WireGuard + microsocks), `proxmox.yml` (netdata parent, no bootstrap).
+All in `playbooks/`. Standard flow: `bootstrap` → `docker` → service roles. Exceptions (no `docker` role): `vpn.yml` (native Tailscale), `mail.yml` (bare-metal Postfix smarthost), `proxmox.yml` (netdata parent, no bootstrap).
 
 ```bash
 # All playbooks — limit to specific host
@@ -44,7 +44,8 @@ ansible-inventory --graph
 | `cloud.yml` | cloud | Nextcloud |
 | `docserver.yml` | docserver | OnlyOffice |
 | `media.yml` | media | Immich |
-| `gateway.yml` | gateway | WireGuard exit-node + microsocks SOCKS5 |
+| `mail.yml` | mail | Postfix smarthost via SMTP2GO |
+| `vault.yml` | vault | Vaultwarden (Bitwarden-compatible) |
 | `agent.yml` | agent | Agent (Hermes AI agent, Docker container, AI agent with learning loop) |
 | `proxmox.yml` | proxmox | Netdata parent, GPU passthrough for CT 104 (site/Frigate) |
 
@@ -66,7 +67,7 @@ State stored in MinIO S3 (`http://192.168.10.12:9000`, bucket `proxmox-ct-state`
 
 Groups in `inventories/lab/hosts.yml`. **All hosts connect as `root`**.
 
-- **`lab`** — Debian CTs (`agent`, `ai-gateway`, `cloud`, `dns`, `docserver`, `gateway`, `media`, `network`, `proxy`, `site`, `tools`, `vpn`). Key `~/.ssh/id_ed25519_opencode`, always via `ProxyJump=proxmox` (`StrictHostKeyChecking=no` set in inventory — no known_hosts needed).
+- **`lab`** — Debian CTs (`agent`, `ai-gateway`, `cloud`, `dns`, `docserver`, `mail`, `media`, `network`, `proxy`, `site`, `tools`, `vault`, `vpn`). Key `~/.ssh/id_ed25519_opencode`, always via `ProxyJump=proxmox` (`StrictHostKeyChecking=no` set in inventory — no known_hosts needed).
 - **`infra`** — `nas` (key `~/.ssh/id_ed25519_opencode`), `proxmox` (key `~/.ssh/id_ed25519_proxmox_opencode`). Direct, no jump.
 
 `proxmox.yml` targets the `proxmox` host in `infra` group, not `lab` — configure Netdata parent + GPU passthrough for Frigate.

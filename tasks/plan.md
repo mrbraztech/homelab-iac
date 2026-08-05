@@ -1,19 +1,18 @@
-# Implementation Plan: Rename CTs (nomenclatura por funcionalidade) + remover ai-rag
+# Implementation Plan: Remover CT gateway → Postfix (SMTP2GO) + Vaultwarden
 
 ## Overview
 
-Refatorar a nomenclatura da infraestrutura para descrever **funcionalidade**, nunca a solução/ferramenta. Renomear 3 CTs (hostname real no Proxmox + todo o repo), remover o CT `ai-rag` por completo, e reutilizar os slots de VMID/IP liberados. Dados preservados via backup/restore Proxmox.
+1. **Remover o CT `gateway`** (VMID 109, 192.168.10.5, WireGuard Proton exit-node + microsocks SOCKS5) — nenhum outro recurso do repo depende dos serviços dele (confirmado por busca de `1080`/`microsocks`/`wireguard`).
+2. **Reaproveitar o slot do gateway** para um CT `mail` (mesmo VMID **109**, mesmo IP **192.168.10.5**) rodando **Postfix como smarthost SMTP2GO** para o lab inteiro (bare-metal, como `vpn.yml`/`gateway.yml` — exceção documentada, MTA de sistema não roda em container).
+3. **Adicionar Vaultwarden** (alternativa leve ao servidor Bitwarden oficial) em um **novo CT `vault`** (VMID **112**, IP **192.168.10.20**), Docker, banco no PostgreSQL central do `nas`, web em `https://vault.omni.corp` via NPM.
 
 ## Decisões do usuário
 
-- Nomes novos: `9router` → **ai-gateway**, `hermes` → **agent**, `omada` → **network**.
-- Remover `ai-rag` completamente (CT + arquivos do projeto).
-- IPs: manter todos os atuais; só mover `9router` .19 → .18 (slot do ai-rag) e `hermes` .20 → .19 (slot do 9router).
-- VMIDs: reutilizar slots liberados → ai-gateway 110 (ex-111), agent 111 (ex-112); network mantém 103.
-- Dados: backup/restore via Proxmox (vzdump → nas-backup → pct restore).
-- Storage NFS `nas-catholic-library`: **manter** (mesmo sem consumidor).
-- Container names do Docker internos (`9router`, `hermes`, `omada`) e paths on-disk (`/opt/9router`, `/opt/omada`, `/opt/hermes`): **manter**.
-- Proxy hosts antigos do NPM (`router.omni.corp`, `hermes.omni.corp`, `omada.omni.corp`): deixar para limpeza manual.
+- Hostname do CT reaproveitado: **`mail`** (funcionalidade, não a ferramenta).
+- Postfix = **smarthost do lab inteiro** (mynetworks = loopback + LAN).
+- Bitwarden: **Vaultwarden** (Rust, 1 container) em vez do servidor oficial (.NET + MSSQL).
+- Vaultwarden em **novo CT** (VMID 112, IP .20).
+- Domínio web: **`vault.omni.corp`** (cert wildcard `*.omni.corp` já cobre).
 
 ## Tabela alvo
 
@@ -22,73 +21,72 @@ Refatorar a nomenclatura da infraestrutura para descrever **funcionalidade**, nu
 | 100 | dns | .2 | dns | dns.yml | pihole |
 | 101 | proxy | .3 | proxy | proxy.yml | nginx_proxy_manager |
 | 102 | tools | .14 | tools | tools.yml | cyberchef+pgadmin |
-| 103 | **network** | .11 | network | network.yml | network |
+| 103 | network | .11 | network | network.yml | network |
 | 104 | site | .13 | site | site.yml | frigate |
 | 105 | vpn | .4 | vpn | vpn.yml | tailscale |
 | 106 | cloud | .15 | cloud | cloud.yml | nextcloud |
 | 107 | docserver | .16 | docserver | docserver.yml | onlyoffice |
 | 108 | media | .17 | media | media.yml | immich |
-| 109 | gateway | .5 | gateway | gateway.yml | gateway |
-| 110 | **ai-gateway** | .18 | ai_gateway | ai-gateway.yml | ai_gateway |
-| 111 | **agent** | .19 | agent | agent.yml | agent |
-| — | ~~ai-rag~~ | ~~.18~~ | ~~ai_rag~~ | — | — |
+| 109 | **mail** | **.5** | **mail** | **mail.yml** | **postfix** |
+| 110 | ai-gateway | .18 | ai_gateway | ai-gateway.yml | ai_gateway |
+| 111 | agent | .19 | agent | agent.yml | agent |
+| 112 | **vault** | **.20** | **vaultwarden** | **vault.yml** | **vaultwarden** |
 
 ## Riscos e mitigações
 
 | Risco | Impacto | Mitigação |
 |---|---|---|
-| `initialization.hostname` e `vm_id` são ForceNew → recria os CTs | Alto (dados) | `vzdump` de 103/111/112 em `nas-backup` ANTES de aplicar; `pct restore` após recriar |
-| Colisão de VMID durante o apply (110 usado pelo ai-rag; 111 usado pelo 9router) | Alto | Aplicar em fases sequenciais: remover ai-rag → renomear 9router → renomear hermes |
-| Backup restaura hostname/IP antigos dentro do rootfs | Médio | `pct set <vmid> --hostname/--net0` para alinhar com o state do tofu após restore |
-| `pct restore` sobrescreve atributos (cpu/memória) do CT recém-criado | Médio | Rodar `tofu apply` após restores para reconciliar a config |
-| FQDN/proxy hosts novos dependem do wildcard `*.omni.corp` | Baixo | Cert wildcard já cobre; deploy_to_npm cria hosts ausentes automaticamente |
-| GPU passthrough do site referencia VMID 104 | Baixo | Site permanece 104 — nenhuma alteração em `playbooks/proxmox.yml` |
+| Terraform vai **destruir e recriar** o CT 109 (mudança de `hostname` + nome do resource) | Médio | Gateway não guarda dados (só wg+microsocks). Garantir destroy-before-create no apply (recriar com mesmo VMID/IP) |
+| SMTP2GO rejeita remetente não verificado (535/550) | Médio | Alias/`smtp_generic_maps` forçam um *verified sender*; conferir "Verified Senders" na conta SMTP2GO |
+| Vaultwarden precisa de `ADMIN_TOKEN` e DB no `nas` | Médio | Credenciais pedidas ao usuário e salvas no vault; role `nas.yml` cria user/db `vaultwarden` |
+| NPM proxy host é gerenciado via UI (config via API está `false`) | Médio | Passo manual documentado + atualizar `docs/npm-proxy-hosts.md` |
+| Ponto único de e-mail: se `mail` cair, lab inteiro perde e-mail | Baixo | Sem dependência atual; monitorar serviço no `check.yml` |
 
 ## Fases
 
-### Fase 1 — Backup (em Proxmox, via API/CLI)
-- [ ] `vzdump` de CTs 103 (omada), 111 (9router), 112 (hermes) → storage `nas-backup`, modo snapshot, zstd.
-- [ ] Confirmar que os 3 arquivos `.tar.zst` existem no storage.
+### Fase 0 — Entradas do usuário (pré-requisito)
+- [ ] Credenciais SMTP2GO: **SMTP user** (username + password, painel "Sending > SMTP Users") + **verified sender** (ex.: `alerts@omni.corp`).
+- [ ] Credenciais Vaultwarden: `ADMIN_TOKEN` (senha do painel admin), e-mail/senha da conta inicial, senha do banco `vaultwarden` no Postgres.
+- [ ] Confirmar que o SOCKS5 do gateway (192.168.10.5:1080) não é mais usado por ninguém.
 
-### Fase 2 — Renome no repositório (sem apply)
-- [ ] Terraform: renomear resources, hostnames, IPs, VMIDs; deletar ai-rag; atualizar outputs.
-- [ ] Inventory: remover ai-rag; renomear hosts 9router/hermes/omada; atualizar IPs.
-- [ ] Roles: renomear dirs + prefixes (`ninerouter_`→`ai_gateway_`, `hermes_`→`agent_`, `omada_`→`network_`); manter paths/container names on-disk.
-- [ ] Playbooks: renomear arquivos e `hosts:`/roles.
-- [ ] host_vars: `hermes/` → `agent/`; renomear vars de vault (`vault_hermes_*` → `vault_agent_*`).
-- [ ] DNS (`custom_dns.yml`): remover ai-rag; renomear short-names + FQDNs.
-- [ ] NPM (`nginx_proxy_manager/defaults/main.yml`): renomear domain_names + forward_host.
-- [ ] Docs (README, AGENTS.md, npm-proxy-hosts, proxmox-rebuild, disaster-recovery, credentials, backlog).
-- [ ] `yamllint .`, `ansible-lint .`, syntax-check de todos os playbooks alterados.
+### Fase 1 — Remover gateway / criar CT mail (Terraform + repo)
+- [ ] Terraform: deletar `containers_gateway.tf`; criar `containers_mail.tf` (vm_id 109, hostname `mail`, ip .5, specs iguais).
+- [ ] `outputs.tf`: `gateway_id`/`gateway_ipv4` → `mail_id`/`mail_ipv4`.
+- [ ] Inventory: `gateway` → `mail` (hosts.yml).
+- [ ] Remover role `gateway/`, playbook `gateway.yml`, `host_vars/gateway/`.
+- [ ] `tofu plan` → confirmar destroy do 109 + create do 109 (mesmo VMID/IP).
 
-### Fase 3 — Apply em fases (OpenTofu)
-- [ ] `tofu state mv` (quando aplicável) + `tofu apply` #1: remover ai-rag → destroi 110.
-- [ ] `tofu apply` #2: renomear 9router→ai-gateway (vm_id 111→110, ip .19→.18) → destroi 111, cria 110.
-- [ ] `tofu apply` #3: renomear hermes→agent (vm_id 112→111, ip .20→.19) → destroi 112, cria 111.
-- [ ] `tofu apply` #4: renomear omada→network (hostname; vm_id/IP inalterados) → substitui 103.
-- [ ] `tofu plan` → 0 changes esperado.
+### Fase 2 — Role `postfix` (CT mail)
+- [ ] Role `postfix`: `defaults/main.yml` (relayhost `[mail.smtp2go.com]:587`, mynetworks loopback+192.168.10.0/24, STARTTLS `encrypt`, creds via vault).
+- [ ] Tasks: apt install `postfix` + `libsasl2-modules`; `sasl_passwd` (0600) + `postmap`; `smtp_generic_maps` (root→verified sender); aliases root→destino; service started/enabled.
+- [ ] `playbooks/mail.yml` (bootstrap + postfix — sem role docker).
+- [ ] `host_vars/mail/vault.yml`: `vault_postfix_smtp_username`, `vault_postfix_smtp_password`, `vault_postfix_sender`, `vault_postfix_admin_email`.
+- [ ] DNS: short-name `gateway` → `mail` em 192.168.10.5.
+- [ ] Verificação: `postconf`, `sendmail` teste, `mailq` vazio, entrega visível nos logs SMTP2GO.
 
-### Fase 4 — Restore de dados
-- [ ] `pct restore 110 <backup-9router>` ; `pct restore 111 <backup-hermes>` ; `pct restore 103 <backup-omada>`.
-- [ ] `pct set` hostname/ip em cada um para bater com o state (`ai-gateway`/.18, `agent`/.19, `network`/.11).
-- [ ] `tofu apply` para reconciliar config; `tofu plan` 0 changes.
+### Fase 3 — Role `vaultwarden` (CT vault)
+- [ ] Terraform: `containers_vaultwarden.tf` (vm_id 112, hostname `vault`, ip .20, 2 cores / 2 GB / 20 GB) + outputs `vault_id`/`vault_ipv4`.
+- [ ] Inventory: host `vault` (192.168.10.20).
+- [ ] Role `vaultwarden`: docker-compose com imagem `vaultwarden/server` (porta 80), env `DATABASE_URL=postgresql://vaultwarden:…@192.168.10.12:5432/vaultwarden`, `DOMAIN=https://vault.omni.corp`, `ADMIN_TOKEN`, `SIGNUPS_ALLOWED=false` após setup; volume `/data` (attachments/config/keys).
+- [ ] `playbooks/vault.yml` (bootstrap + docker + vaultwarden).
+- [ ] `nas.yml` (2º play): user + db `vaultwarden` em `postgres_setup_users`/`postgres_setup_databases`.
+- [ ] `host_vars/vault/vault.yml`: `vault_vaultwarden_admin_token`, `vault_vaultwarden_db_password` etc.
+- [ ] DNS: `vault.omni.corp` → proxy (.3); short-name `vault` → .20.
+- [ ] NPM (manual via UI): proxy host `vault.omni.corp` → 192.168.10.20:80, SSL com cert wildcard; atualizar `docs/npm-proxy-hosts.md`.
 
-### Fase 5 — Configuração (Ansible)
-- [ ] `dns.yml --limit dns` (aplica short-names + FQDNs novos via API Pi-hole).
-- [ ] `proxy.yml --limit proxy` (internal_ca cria os proxy hosts novos; associa wildcard).
-- [ ] Playbooks dos CTs renomeados (`ai-gateway.yml`, `agent.yml`, `network.yml`).
-- [ ] `check.yml` para validar todos os hosts.
+### Fase 4 — Consumidores do smarthost (opcional)
+- [ ] Ajustar apps que enviam e-mail (netdata, frigate, immich…) para `192.168.10.5:25` sem auth (mynetworks LAN) ou com credenciais se preferir auth.
 
-### Fase 6 — Verificação e commit
-- [ ] `ansible lab -m ping`, `tofu plan` 0 changes.
-- [ ] Testar endpoints: `https://ai-gateway.omni.corp`, `https://agent.omni.corp` (com auth), `https://network.omni.corp`.
+### Fase 5 — Documentação e validação
+- [ ] README (tabelas de CTs/playbooks/roles), AGENTS.md (tabela de playbooks + exceção `mail.yml`), `docs/npm-proxy-hosts.md`, `docs/access.md`/`credentials.md` (novos serviços).
+- [ ] `yamllint .`, `ansible-lint .`, `--syntax-check` dos playbooks alterados, `tofu validate` + `tofu plan`.
+- [ ] Apply em sequência: tofu → dns.yml → mail.yml → nas.yml → vault.yml → proxy manual.
+- [ ] Testes: `ssh root@mail`, `echo teste | sendmail -f <sender> <dest>`; `https://vault.omni.corp` acessível e cria cofre; `tofu plan` 0 changes.
 - [ ] Revisar `git diff`, commit + push.
-- [ ] Limpeza manual (fora do repo): remover proxy hosts antigos do NPM.
 
-## Observação de dados preservados
+## Pendências / Open questions
 
-- `9router`: dados em `/opt/9router/data` (bind mount do compose).
-- `hermes`: dados em `/opt/hermes/data` (bind mount `./data` → `/opt/data`).
-- `omada`: dados em `/opt/omada/data` e `/opt/omada/log`.
-
-Como paths e container names são mantidos, após `pct restore` as roles reutilizam os dados existentes sem recriar do zero.
+- Fornecer SMTP2GO SMTP user + verified sender (usuário).
+- Definir remetente padrão (`alerts@omni.corp`?) e destino dos e-mails de sistema (root alias).
+- Gerar `ADMIN_TOKEN` do Vaultwarden e senha do DB (usuário decide; convenção exige perguntar).
+- Confirmar apps que passarão a usar o smarthost (Fase 4).

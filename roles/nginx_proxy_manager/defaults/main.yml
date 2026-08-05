@@ -144,3 +144,12 @@ nginx_proxy_manager_default_proxy_hosts:
     ssl_enabled: true
     http2_support: true
     ssl_forced: false
+
+  - domain_names:
+      - vault.omni.corp
+    forward_scheme: http
+    forward_host: 192.168.10.20
+    forward_port: 80
+    ssl_enabled: true
+    http2_support: true
+    ssl_forced: false

@@ -88,14 +88,14 @@ output "media_ipv4" {
   value       = proxmox_virtual_environment_container.media.ipv4
 }
 
-output "gateway_id" {
-  description = "VMID do container gateway"
-  value       = proxmox_virtual_environment_container.gateway.vm_id
+output "mail_id" {
+  description = "VMID do container mail"
+  value       = proxmox_virtual_environment_container.mail.vm_id
 }
 
-output "gateway_ipv4" {
-  description = "Endereço IPv4 do container gateway"
-  value       = proxmox_virtual_environment_container.gateway.ipv4
+output "mail_ipv4" {
+  description = "Endereço IPv4 do container mail"
+  value       = proxmox_virtual_environment_container.mail.ipv4
 }
 
 output "ai_gateway_id" {
@@ -116,6 +116,16 @@ output "agent_id" {
 output "agent_ipv4" {
   description = "Endereço IPv4 do container agent"
   value       = proxmox_virtual_environment_container.agent.ipv4
+}
+
+output "vault_id" {
+  description = "VMID do container vault"
+  value       = proxmox_virtual_environment_container.vault.vm_id
+}
+
+output "vault_ipv4" {
+  description = "Endereço IPv4 do container vault"
+  value       = proxmox_virtual_environment_container.vault.ipv4
 }
 
 output "nas_backup_id" {

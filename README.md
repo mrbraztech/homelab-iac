@@ -110,7 +110,9 @@ homelab-iac/
 │           ├── nas/vault.yml
 │           ├── vpn/vault.yml
 │           ├── cloud/vault.yml
-│           └── media/vault.yml
+│           ├── media/vault.yml
+│           ├── mail/vault.yml
+│           └── vault/vault.yml
 ├── playbooks/
 │   ├── nas.yml                  # NAS: bootstrap, docker, postgres, redis, omv
 │   ├── tools.yml                # Tools: bootstrap, docker, cyberchef, pgadmin
@@ -123,7 +125,8 @@ homelab-iac/
 │   ├── cloud.yml                # Cloud: bootstrap, docker, nextcloud, onlyoffice
 │   ├── docserver.yml            # DocServer: bootstrap, docker, onlyoffice
 │   ├── media.yml                # Media: bootstrap, docker, immich
-│   ├── gateway.yml              # Gateway: bootstrap, wireguard exit-node
+│   ├── mail.yml                 # Mail: bootstrap, postfix smarthost (SMTP2GO)
+│   ├── vault.yml                # Vault: bootstrap, docker, vaultwarden
 │   └── check.yml                # Diagnostics (all hosts)
 ├── roles/
 │   ├── bootstrap/               # User, packages, locale, timezone, SSH
@@ -142,7 +145,8 @@ homelab-iac/
 │   ├── nextcloud/               # Nextcloud
 │   ├── onlyoffice/              # OnlyOffice Document Server
 │   ├── immich/                  # Immich photo/video
-│   ├── gateway/                 # WireGuard exit-node + microsocks (SOCKS5)
+│   ├── postfix/                 # Postfix smarthost via SMTP2GO
+│   ├── vaultwarden/             # Vaultwarden (Bitwarden-compatible)
 │   └── minio/                   # MinIO AIStor
 ├── terraform/
 │   ├── backend.tf               # S3 backend (MinIO)
@@ -160,9 +164,10 @@ homelab-iac/
 │   ├── containers_cloud.tf      # CT cloud (106)
 │   ├── containers_docserver.tf  # CT docserver (107)
 │   ├── containers_media.tf      # CT media (108)
-│   ├── containers_gateway.tf    # CT gateway (109)
+│   ├── containers_mail.tf       # CT mail (109)
 │   ├── containers_ai_gateway.tf # CT ai-gateway (110)
 │   ├── containers_agent.tf      # CT agent (111)
+│   ├── containers_vault.tf      # CT vault (112)
 │   └── outputs.tf               # All resource outputs
 ├── scripts/
 │   └── export-tf-vars.sh        # Export TF + AWS env vars
@@ -197,9 +202,10 @@ State stored in MinIO S3-compatible storage:
 | CT cloud | 106 | 192.168.10.15 | `containers_cloud.tf` |
 | CT docserver | 107 | 192.168.10.16 | `containers_docserver.tf` |
 | CT media | 108 | 192.168.10.17 | `containers_media.tf` |
-| CT gateway | 109 | 192.168.10.5 | `containers_gateway.tf` |
+| CT mail | 109 | 192.168.10.5 | `containers_mail.tf` |
 | CT ai-gateway | 110 | 192.168.10.18 | `containers_ai_gateway.tf` |
 | CT agent | 111 | 192.168.10.19 | `containers_agent.tf` |
+| CT vault | 112 | 192.168.10.20 | `containers_vault.tf` |
 | Storage nas-backup | — | — | `storage.tf` |
 | Storage nas-nextcloud | — | — | `storage.tf` |
 | Storage nas-media | — | — | `storage.tf` |
@@ -258,7 +264,8 @@ All hosts in `inventories/lab/hosts.yml` under the `lab` group:
 | docserver | 192.168.10.16 | `docserver.yml` | OnlyOffice |
 | media | 192.168.10.17 | `media.yml` | Immich |
 | agent | 192.168.10.19 | `agent.yml` | Agent (Hermes AI agent) |
-| gateway | 192.168.10.5 | `gateway.yml` | WireGuard exit-node + SOCKS5 |
+| mail | 192.168.10.5 | `mail.yml` | Postfix smarthost (SMTP2GO) |
+| vault | 192.168.10.20 | `vault.yml` | Vaultwarden (Bitwarden-compatible) |
 
 ### Run a playbook
 
@@ -297,13 +304,15 @@ Sensitive values stored in `inventories/lab/host_vars/<host>/vault.yml` (Ansible
 
 | Host | Variables |
 |---|---|
-| nas | `vault_proxmox_user`, `vault_proxmox_password`, `vault_minio_access_key`, `vault_minio_secret_key`, `vault_postgres_password`, `vault_immich_password`, `vault_nextcloud_password` |
+| nas | `vault_proxmox_user`, `vault_proxmox_password`, `vault_minio_access_key`, `vault_minio_secret_key`, `vault_postgres_password`, `vault_immich_password`, `vault_nextcloud_password`, `vault_vaultwarden_password` |
 | tools | `vault_pgadmin_password` |
 | dns | `vault_pihole_password` |
 | vpn | `vault_tailscale_auth_key` |
 | cloud | `vault_nextcloud_db_password`, `vault_nextcloud_admin_password` |
 | docserver | `vault_onlyoffice_jwt_secret` |
 | media | `vault_immich_db_password`, `vault_immich_jwt_secret` |
+| mail | `vault_postfix_smtp_username`, `vault_postfix_smtp_password`, `vault_postfix_sender`, `vault_postfix_root_alias` |
+| vault | `vault_vaultwarden_admin_token`, `vault_vaultwarden_db_password` |
 
 Encrypt a new vault file:
 
@@ -346,7 +355,7 @@ Both must pass. Pre-commit hooks run these automatically.
 ├── .2   — DNS (Pi-hole)
 ├── .3   — Proxy (NPM)
 ├── .4   — VPN (Tailscale)
-├── .5   — Gateway CT
+├── .5   — Mail (Postfix smarthost via SMTP2GO)
 ├── .10  — Proxmox host
 ├── .11  — Network controller (Omada)
 ├── .12  — NAS (PostgreSQL, Redis, OMV, MinIO)
@@ -356,7 +365,8 @@ Both must pass. Pre-commit hooks run these automatically.
 ├── .16  — DocServer (OnlyOffice)
 ├── .17  — Media (Immich)
 ├── .18  — AI gateway (9Router + Headroom)
-└── .19  — Agent (Hermes AI agent)
+├── .19  — Agent (Hermes AI agent)
+└── .20  — Vault (Vaultwarden)
 ```
 
 ---
