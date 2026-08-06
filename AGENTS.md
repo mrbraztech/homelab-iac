@@ -67,7 +67,7 @@ State stored in MinIO S3 (`http://192.168.10.12:9000`, bucket `proxmox-ct-state`
 
 Groups in `inventories/lab/hosts.yml`. **All hosts connect as `root`**.
 
-- **`lab`** — Debian CTs (`agent`, `ai-gateway`, `cloud`, `dns`, `docserver`, `mail`, `media`, `network`, `proxy`, `site`, `tools`, `vault`, `vpn`). Key `~/.ssh/id_ed25519_opencode`, always via `ProxyJump=proxmox` (`StrictHostKeyChecking=no` set in inventory — no known_hosts needed).
+- **`lab`** — Debian CTs (`agent`, `ai-gateway`, `cloud`, `dns`, `docserver`, `mail`, `media`, `network`, `proxy`, `site`, `tools`, `vault`, `vpn`). Key `~/.ssh/id_ed25519_opencode`, always via `ProxyJump=containers` (`StrictHostKeyChecking=no` set in inventory — no known_hosts needed).
 - **`infra`** — `nas` (key `~/.ssh/id_ed25519_opencode`), `proxmox` (key `~/.ssh/id_ed25519_proxmox_opencode`). Direct, no jump.
 
 `proxmox.yml` targets the `proxmox` host in `infra` group, not `lab` — configure Netdata parent + GPU passthrough for Frigate.
@@ -108,7 +108,7 @@ ansible-vault encrypt inventories/lab/host_vars/<host>/vault.yml
 ## Gotchas
 
 - `collections/ansible_collections/` is vendored locally — excluded from linters. Never edit.
-- `lab` hosts are only reachable via `ProxyJump=proxmox` — connection fails if proxmox is down or unreachable.
+- `lab` hosts are only reachable via `ProxyJump=containers` — connection fails if proxmox is down or unreachable.
 - First provision: `bootstrap_ssh_password_authentication: true` in `inventories/lab/group_vars/all.yml` (password needed for first SSH key push). Role default is `false`.
 - `check.yml` targets `all` (includes both `lab` and `infra` groups).
 - `nas.yml` has a second play for PostgreSQL database setup (users, databases, extensions) — runs `community.postgresql.*` modules after roles complete.
