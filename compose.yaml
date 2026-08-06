@@ -1,0 +1,58 @@
+services:
+  opencode:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USER_UID: ${USER_UID:-1000}
+        USER_GID: ${USER_GID:-1000}
+
+    image: homelab-iac-opencode:local
+    container_name: homelab-iac-opencode
+
+    stdin_open: true
+    tty: true
+
+    working_dir: /workspace
+
+    environment:
+      HOME: /home/opencode
+      TERM: xterm-256color
+      COLORTERM: truecolor
+
+      # Forward the host SSH agent instead of mounting private keys.
+      SSH_AUTH_SOCK: /tmp/ssh-agent.sock
+
+      # Keep Ansible temporary files inside the container user's home.
+      ANSIBLE_LOCAL_TEMP: /home/opencode/.ansible/tmp
+      ANSIBLE_REMOTE_TEMP: /tmp/.ansible-${USER_UID:-1000}
+
+      # Avoid Git prompting indefinitely inside the agent.
+      GIT_TERMINAL_PROMPT: "1"
+
+    volumes:
+      # The agent can access only this repository.
+      - .:/workspace
+
+      # Persist OpenCode configuration, authentication and sessions.
+      - ${HOME}/.config/opencode:/home/opencode/.config/opencode
+      - ${HOME}/.vault_pass:/home/opencode/.vault_pass
+      
+      # Forward loaded SSH keys without exposing their private files.
+      - ${SSH_AUTH_SOCK}:/tmp/ssh-agent.sock
+
+      # SSH host aliases and host verification.
+      - ${HOME}/.ssh/config:/home/opencode/.ssh/config:ro
+      - ${HOME}/.ssh/known_hosts:/home/opencode/.ssh/known_hosts:ro
+
+    security_opt:
+      - no-new-privileges:true
+
+    cap_drop:
+      - ALL
+
+    tmpfs:
+      - /tmp:rw,exec,nosuid,nodev,size=512m,mode=1777
+      - /run:rw,nosuid,nodev,noexec,size=64m,mode=0755
+
+    restart: "no"

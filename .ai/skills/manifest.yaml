@@ -1,0 +1,18 @@
+version: 1
+
+skills:
+
+  - terraform
+  - ansible
+  - proxmox
+  - docker
+  - postgresql
+  - linux
+
+language:
+  conversation: pt-BR
+  repository: en-US
+
+defaults:
+  approval_required: true
+  validate_before_finish: true
