@@ -15,6 +15,14 @@
     group: root
     mode: "0755"
 
+- name: Ensure hermes backup directory exists on NFS share
+  ansible.builtin.file:
+    path: "{{ agent_backup_dir }}"
+    state: directory
+    owner: "10000"
+    group: "10000"
+    mode: "0700"
+
 - name: Deploy docker-compose.yml
   ansible.builtin.template:
     src: docker-compose.yml.j2

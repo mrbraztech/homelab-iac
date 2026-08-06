@@ -28,6 +28,13 @@ agent_telegram_allowed_users: "{{ vault_agent_telegram_allowed_users }}"
 # an unreachable IPv6 address, so pin the reachable IPv4 fallback IP.
 agent_telegram_fallback_ips: "149.154.167.220"
 
+# NFS backup share mounted into the container (same path as host)
+agent_backup_path: /mnt/backup
+# Service subdir on the share owned by the hermes user (uid 10000), mirroring
+# the per-service subdir pattern used on nas-media (upload/library) and
+# nas-surveillance (frigate)
+agent_backup_dir: "{{ agent_backup_path }}/hermes"
+
 # Container resource limits
 agent_memory_limit: "4G"
 agent_cpus_limit: "2.0"

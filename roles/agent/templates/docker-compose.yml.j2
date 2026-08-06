@@ -25,6 +25,7 @@ services:
 {% endif %}
     volumes:
       - ./data:/opt/data
+      - {{ agent_backup_path }}:/mnt/backup
     deploy:
       resources:
         limits:
