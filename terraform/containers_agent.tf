@@ -8,6 +8,7 @@ resource "proxmox_virtual_environment_container" "agent" {
   timeout_delete = 60
 
   features {
+    mount   = ["nfs"]
     nesting = true
   }
 
@@ -39,6 +40,11 @@ resource "proxmox_virtual_environment_container" "agent" {
   disk {
     datastore_id = "local-lvm"
     size         = 60
+  }
+
+  mount_point {
+    volume = "/mnt/pve/nas-backup"
+    path   = "/mnt/backup"
   }
 
   network_interface {
