@@ -1,7 +1,7 @@
 ---
 nginx_proxy_manager_admin_email: "{{ vault_npm_admin_email }}"
 nginx_proxy_manager_admin_password: "{{ vault_npm_admin_password }}"
-nginx_proxy_manager_configure_proxy_hosts: false
+nginx_proxy_manager_configure_proxy_hosts: true
 
 internal_ca_domains:
   - name: "*.omni.corp"

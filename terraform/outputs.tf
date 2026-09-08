@@ -128,6 +128,16 @@ output "vault_ipv4" {
   value       = proxmox_virtual_environment_container.vault.ipv4
 }
 
+output "hearthlane_relay_id" {
+  description = "VMID do container hearthlane-relay"
+  value       = proxmox_virtual_environment_container.hearthlane_relay.vm_id
+}
+
+output "hearthlane_relay_ipv4" {
+  description = "Endereço IPv4 do container hearthlane-relay"
+  value       = proxmox_virtual_environment_container.hearthlane_relay.ipv4
+}
+
 output "nas_backup_id" {
   description = "ID do storage NFS nas-backup"
   value       = proxmox_storage_nfs.nas_backup.id

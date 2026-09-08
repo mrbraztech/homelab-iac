@@ -1,7 +1,7 @@
 ---
 - name: Wait for NPM API to be ready
   ansible.builtin.uri:
-    url: "{{ nginx_proxy_manager_api_url }}/health"
+    url: "{{ nginx_proxy_manager_api_url | regex_replace('/api$', '') }}/health"
     method: GET
     status_code: 200
   register: nginx_proxy_manager_health
@@ -32,38 +32,63 @@
 
 - name: Create or update proxy hosts
   ansible.builtin.uri:
-    url: "{{ nginx_proxy_manager_api_url }}/nginx/proxy-hosts{% if item.id is defined %}/{{ item.id }}{% endif %}"
-    method: "{% if item.id is defined %}PUT{% else %}POST{% endif %}"
+    url: "{{ nginx_proxy_manager_api_url }}/nginx/proxy-hosts{% if existing_host %}/{{ existing_host.id }}{% endif %}"
+    method: "{% if existing_host %}PUT{% else %}POST{% endif %}"
     headers:
       Authorization: "Bearer {{ nginx_proxy_manager_auth.json.token }}"
     body_format: json
     body:
-      domain_names: "{{ item.domain_names }}"
-      forward_scheme: "{{ item.forward_scheme }}"
-      forward_host: "{{ item.forward_host }}"
-      forward_port: "{{ item.forward_port }}"
-      access_list_id: "{{ item.access_list_id | default(0) }}"
-      certificate_id: "{{ item.certificate_id | default(0) }}"
-      ssl_forced: "{{ item.ssl_forced | default(false) }}"
-      caching_enabled: "{{ item.caching_enabled | default(false) }}"
-      block_exploits: "{{ item.block_exploits | default(false) }}"
-      advanced_config: "{{ item.advanced_config | default('') }}"
+      domain_names: "{{ proxy_host.domain_names }}"
+      forward_scheme: "{{ proxy_host.forward_scheme }}"
+      forward_host: "{{ proxy_host.forward_host }}"
+      forward_port: "{{ proxy_host.forward_port }}"
+      access_list_id: >-
+        {{ proxy_host.access_list_id
+           if proxy_host.access_list_id is defined
+           else existing_host.access_list_id | default(0) }}
+      certificate_id: >-
+        {{ proxy_host.certificate_id
+           if proxy_host.certificate_id is defined
+           else existing_host.certificate_id | default(0) }}
+      ssl_forced: >-
+        {{ proxy_host.ssl_forced
+           if proxy_host.ssl_forced is defined
+           else existing_host.ssl_forced | default(false) }}
+      caching_enabled: >-
+        {{ proxy_host.caching_enabled
+           if proxy_host.caching_enabled is defined
+           else existing_host.caching_enabled | default(false) }}
+      block_exploits: >-
+        {{ proxy_host.block_exploits
+           if proxy_host.block_exploits is defined
+           else existing_host.block_exploits | default(false) }}
+      advanced_config: >-
+        {{ proxy_host.advanced_config
+           if proxy_host.advanced_config is defined
+           else existing_host.advanced_config | default('') }}
       meta:
         letsencrypt_agree: false
         dns_challenge: false
-      allow_websocket_upgrade: "{{ item.allow_websocket_upgrade | default(true) }}"
-      http2_support: "{{ item.http2_support | default(false) }}"
-      forward_host_header: true
-      preserve_host_header: false
+      allow_websocket_upgrade: >-
+        {{ proxy_host.allow_websocket_upgrade
+           if proxy_host.allow_websocket_upgrade is defined
+           else existing_host.allow_websocket_upgrade | default(true) }}
+      http2_support: >-
+        {{ proxy_host.http2_support
+           if proxy_host.http2_support is defined
+           else existing_host.http2_support | default(false) }}
       enabled: true
     status_code: [200, 201]
-  loop: "{{ nginx_proxy_manager_proxy_hosts | default(nginx_proxy_manager_default_proxy_hosts) }}"
+  loop: >-
+    {{ nginx_proxy_manager_proxy_hosts
+       if nginx_proxy_manager_proxy_hosts
+       else nginx_proxy_manager_default_proxy_hosts }}
   loop_control:
-    label: "{{ item.domain_names | join(', ') }}"
+    loop_var: proxy_host
+    label: "{{ proxy_host.domain_names | join(', ') }}"
   vars:
     existing_host: >-
       {{ nginx_proxy_manager_existing_hosts.json |
-         selectattr('domain_names', 'equalto', item.domain_names) |
+         selectattr('domain_names', 'equalto', proxy_host.domain_names) |
          first | default({}) }}
-    item: "{{ item | combine({'id': existing_host.id}) if existing_host else item }}"
   when: nginx_proxy_manager_configure_proxy_hosts

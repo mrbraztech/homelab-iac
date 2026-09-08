@@ -1,0 +1,14 @@
+---
+# Hearthlane Relay Docker deployment settings
+relay_repo_url: https://github.com/usehearthlane/hearthlane-relay.git
+relay_repo_version: main
+relay_install_dir: /opt/relay
+relay_data_dir: /opt/relay/data
+relay_container_name: hearthlane-relay
+relay_http_port: "8080"
+relay_bind: "0.0.0.0"
+relay_data_file: "/data/state.json"
+
+# Container resource limits
+relay_memory_limit: "512M"
+relay_cpus_limit: "1.0"

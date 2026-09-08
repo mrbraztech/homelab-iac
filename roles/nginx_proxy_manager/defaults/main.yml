@@ -153,3 +153,19 @@ nginx_proxy_manager_default_proxy_hosts:
     ssl_enabled: true
     http2_support: true
     ssl_forced: false
+
+  - domain_names:
+      - relay.hearthlane.omni.corp
+    forward_scheme: http
+    forward_host: 192.168.10.21
+    forward_port: 8080
+    ssl_enabled: false
+    http2_support: false
+
+  - domain_names:
+      - frigate.hearthlane.omni.corp
+    forward_scheme: http
+    forward_host: 192.168.10.13
+    forward_port: 5000
+    ssl_enabled: false
+    http2_support: false

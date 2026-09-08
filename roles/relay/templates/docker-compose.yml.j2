@@ -1,0 +1,27 @@
+services:
+  relay:
+    build:
+      context: ./src
+      dockerfile: deploy/Dockerfile
+    image: hearthlane-relay:local
+    container_name: "{{ relay_container_name }}"
+    restart: unless-stopped
+    ports:
+      - "{{ relay_http_port }}:{{ relay_http_port }}"
+    environment:
+      RELAY_BIND: "{{ relay_bind }}"
+      RELAY_PORT: "{{ relay_http_port }}"
+      RELAY_DATA_FILE: "{{ relay_data_file }}"
+    volumes:
+      - "{{ relay_data_dir }}:/data"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:{{ relay_http_port }}/devices"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: "{{ relay_memory_limit }}"
+          cpus: "{{ relay_cpus_limit }}"

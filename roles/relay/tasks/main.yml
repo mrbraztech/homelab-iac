@@ -1,0 +1,40 @@
+---
+- name: Ensure relay install directory exists
+  ansible.builtin.file:
+    path: "{{ relay_install_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Ensure relay data directory exists
+  ansible.builtin.file:
+    path: "{{ relay_data_dir }}"
+    state: directory
+    owner: "10001"
+    group: "10001"
+    mode: "0700"
+
+- name: Clone hearthlane-relay repository
+  ansible.builtin.git:
+    repo: "{{ relay_repo_url }}"
+    dest: "{{ relay_install_dir }}/src"
+    version: "{{ relay_repo_version }}"
+    force: true
+  notify: Restart relay
+
+- name: Deploy docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ relay_install_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart relay
+
+- name: Ensure relay container is running
+  community.docker.docker_compose_v2:
+    project_src: "{{ relay_install_dir }}"
+    state: present
+    build: always
+    recreate: auto

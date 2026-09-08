@@ -46,6 +46,7 @@ ansible-inventory --graph
 | `media.yml` | media | Immich |
 | `mail.yml` | mail | Postfix smarthost via SMTP2GO |
 | `vault.yml` | vault | Vaultwarden (Bitwarden-compatible) |
+| `relay.yml` | relay | Hearthlane Relay (device location tracker) |
 | `agent.yml` | agent | Agent (Hermes AI agent, Docker container, AI agent with learning loop) |
 | `proxmox.yml` | proxmox | Netdata parent, GPU passthrough for CT 104 (site/Frigate) |
 

@@ -1,0 +1,9 @@
+---
+- name: Configure Hearthlane Relay host
+  hosts: relay
+  become: true
+  gather_facts: true
+  roles:
+    - bootstrap
+    - docker
+    - relay

@@ -25,6 +25,8 @@ Current NPM proxy hosts configuration extracted from CT 101 (proxy).
 | agent.omni.corp | 192.168.10.19 | 9119 | Yes | Agent dashboard (agent CT) |
 | network.omni.corp | 192.168.10.11 | 8043 | Yes | Network controller (network CT) |
 | vault.omni.corp | 192.168.10.20 | 80 | Yes | Vaultwarden (vault CT) |
+| relay.hearthlane.omni.corp | 192.168.10.21 | 8080 | No | Hearthlane Relay (relay CT) |
+| frigate.hearthlane.omni.corp | 192.168.10.13 | 5000 | No | Frigate NVR (site CT) |
 
 ---
 
