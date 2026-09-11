@@ -30,20 +30,32 @@ services:
       # Avoid Git prompting indefinitely inside the agent.
       GIT_TERMINAL_PROMPT: "1"
 
+      # Forward the host X11 display for clipboard sharing.
+      DISPLAY: ${DISPLAY:-:0}
+
     volumes:
       # The agent can access only this repository.
       - .:/workspace
 
-      # Persist OpenCode configuration, authentication and sessions.
-      - ${HOME}/.config/opencode:/home/opencode/.config/opencode
+      # Ansible Vault pass.
       - ${HOME}/.vault_pass:/home/opencode/.vault_pass
-      
+
+      # Shared OpenCode configuration.
+      - ${HOME}/.config/opencode:/home/opencode/.config/opencode
+
+      # Persistent OpenCode sessions/data.
+      - opencode-share:/home/opencode/.local/share/opencode
+      - opencode-state:/home/opencode/.local/state/opencode
+
       # Forward loaded SSH keys without exposing their private files.
       - ${SSH_AUTH_SOCK}:/tmp/ssh-agent.sock
 
       # SSH host aliases and host verification.
       - ${HOME}/.ssh/config:/home/opencode/.ssh/config:ro
       - ${HOME}/.ssh/known_hosts:/home/opencode/.ssh/known_hosts:ro
+
+      # X11 clipboard.
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
 
     security_opt:
       - no-new-privileges:true
@@ -56,3 +68,7 @@ services:
       - /run:rw,nosuid,nodev,noexec,size=64m,mode=0755
 
     restart: "no"
+
+volumes:
+  opencode-share:
+  opencode-state:

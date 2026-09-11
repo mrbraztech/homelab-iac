@@ -1,41 +1,25 @@
-FROM python:3.13-slim-bookworm
+FROM opencode-base:latest
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG USER_NAME=opencode
 ARG USER_UID=1000
 ARG USER_GID=1000
 
 USER root
 
-# Common infrastructure and development tools.
+# Python, pip and tools required by Ansible and OpenTofu.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        bash \
         bash-completion \
-        ca-certificates \
-        curl \
-        git \
         gnupg \
-        iproute2 \
-        iputils-ping \
-        jq \
-        less \
-        make \
-        netcat-openbsd \
-        openssh-client \
-        procps \
+        python3 \
+        python3-pip \
+        python3-venv \
         rsync \
         shellcheck \
-        sudo \
-        tree \
-        unzip \
-        vim-tiny \
-        wget \
-        zip \
     && rm -rf /var/lib/apt/lists/*
 
 # Install OpenTofu from its official Debian repository.
-RUN install -m 0755 -d /etc/apt/keyrings \
+RUN mkdir -p /etc/apt/keyrings \
     && curl -fsSL https://get.opentofu.org/opentofu.gpg \
         -o /etc/apt/keyrings/opentofu.gpg \
     && curl -fsSL https://packages.opentofu.org/opentofu/tofu/gpgkey \
@@ -52,54 +36,36 @@ RUN install -m 0755 -d /etc/apt/keyrings \
     && apt-get install -y --no-install-recommends tofu \
     && rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user matching the host UID/GID.
-RUN groupadd --gid "${USER_GID}" "${USER_NAME}" \
-    && useradd \
-        --uid "${USER_UID}" \
-        --gid "${USER_GID}" \
-        --create-home \
-        --shell /bin/bash \
-        "${USER_NAME}"
+# Additional directories for project-specific tools.
+RUN mkdir -p \
+        "${HOME}/.ansible/tmp" \
+        /opt/pipx \
+        /opt/venv \
+    && python3 -m venv /opt/venv \
+    && chown -R "${USER_UID}:${USER_GID}" \
+        "${HOME}" \
+        /opt/pipx \
+        /opt/venv
 
-ENV HOME="/home/${USER_NAME}"
-ENV PATH="${HOME}/.local/bin:${HOME}/.opencode/bin:/usr/local/bin:${PATH}"
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="/opt/venv/bin:${PATH}"
+
+USER ${USER_UID}:${USER_GID}
 
 # Install pipx and repository-wide Python CLI tools.
-RUN python -m pip install --no-cache-dir --upgrade pip pipx \
+RUN pip install --no-cache-dir --upgrade pip pipx \
     && PIPX_HOME=/opt/pipx \
-       PIPX_BIN_DIR=/usr/local/bin \
+       PIPX_BIN_DIR=/opt/venv/bin \
        pipx install ansible-core \
     && PIPX_HOME=/opt/pipx \
-       PIPX_BIN_DIR=/usr/local/bin \
+       PIPX_BIN_DIR=/opt/venv/bin \
        pipx install ansible-lint \
     && PIPX_HOME=/opt/pipx \
-       PIPX_BIN_DIR=/usr/local/bin \
+       PIPX_BIN_DIR=/opt/venv/bin \
        pipx install yamllint \
     && PIPX_HOME=/opt/pipx \
-       PIPX_BIN_DIR=/usr/local/bin \
+       PIPX_BIN_DIR=/opt/venv/bin \
        pipx install pre-commit
-
-# Prepare writable directories before switching users.
-RUN mkdir -p \
-        /workspace \
-        "${HOME}/.ssh" \
-        "${HOME}/.config/opencode" \
-        "${HOME}/.cache/opencode" \
-        "${HOME}/.local/share/opencode" \
-        "${HOME}/.local/state/opencode" \
-        "${HOME}/.ansible/tmp" \
-    && chown -R "${USER_UID}:${USER_GID}" \
-        /workspace \
-        "${HOME}" \
-        /opt/pipx
-
-USER ${USER_NAME}
-
-# Install OpenCode for the non-root user.
-RUN curl -fsSL https://opencode.ai/install | bash \
-    && opencode --version
-
-WORKDIR /workspace
 
 # Validate the main tools while building the image.
 RUN python --version \
