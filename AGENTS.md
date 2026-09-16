@@ -90,6 +90,8 @@ ansible-vault encrypt inventories/lab/host_vars/<host>/vault.yml
 - **Defaults**: `defaults/main.yml` for overridable; `vars/` only for fixed values
 - **Database**: never SQLite/file-based stores — all apps that need a database must use the central PostgreSQL on `nas` (`nas.yml`, second play creates users/databases)
 - **Deployment**: new provisionings must prefer Docker containers over bare-metal installs by default — switch to bare-metal only when there is a clear, objective reason (e.g. no official image, host-level requirements). Always confirm exceptions with the user before implementing them.
+- **Docker images**: never use the `latest` tag — always pin container images to a specific version tag (e.g. `vaultwarden/server:1.37.3`)
+- **Version updates**: always back up the CT on Proxmox before updating service versions (see `docs/proxmox-backups.md`); if the update fails with a blocking error, restore the CT from that backup
 - **New CTs**: every new CT requires two DNS records in `inventories/lab/host_vars/dns/custom_dns.yml` (under `pihole_custom_dns`):
   - a **short-name** record (e.g. `dns` → `192.168.10.2`) so `ssh root@dns` resolves directly to the CT, and
   - when the CT exports a web service, a `*.omni.corp` FQDN (e.g. `dns.omni.corp`) — but web FQDNs resolve to the NPM proxy (`192.168.10.3`), not the CT, and need a matching NPM reverse proxy host (see `docs/npm-proxy-hosts.md`); the `*.omni.corp` wildcard from the internal CA already covers the certificate.

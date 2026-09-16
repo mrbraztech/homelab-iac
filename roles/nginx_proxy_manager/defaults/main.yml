@@ -1,5 +1,5 @@
 ---
-nginx_proxy_manager_image: jc21/nginx-proxy-manager:latest
+nginx_proxy_manager_image: jc21/nginx-proxy-manager:2.15.1
 nginx_proxy_manager_container_name: npm
 nginx_proxy_manager_http_port: "80"
 nginx_proxy_manager_https_port: "443"

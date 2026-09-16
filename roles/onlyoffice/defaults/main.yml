@@ -1,5 +1,5 @@
 ---
-onlyoffice_image: onlyoffice/documentserver:latest
+onlyoffice_image: onlyoffice/documentserver:9.4.0.1
 onlyoffice_container_name: onlyoffice-documentserver
 onlyoffice_http_port: "8080"
 onlyoffice_data_path: /opt/onlyoffice/data

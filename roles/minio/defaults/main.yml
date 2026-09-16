@@ -1,5 +1,5 @@
 ---
-minio_image: quay.io/minio/aistor/minio:latest
+minio_image: quay.io/minio/aistor/minio:RELEASE.2026-07-24T16-43-31Z
 minio_container_name: aistor-server
 minio_api_port: "9000"
 minio_console_port: "9001"

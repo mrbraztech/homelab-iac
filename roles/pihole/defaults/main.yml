@@ -1,5 +1,5 @@
 ---
-pihole_image: pihole/pihole:latest
+pihole_image: pihole/pihole:2026.07.2
 pihole_container_name: pihole
 pihole_http_port: "80"
 pihole_dns_port: "53"

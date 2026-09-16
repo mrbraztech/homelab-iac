@@ -1,6 +1,6 @@
 ---
 # Vaultwarden Docker deployment settings
-vaultwarden_image: vaultwarden/server:latest
+vaultwarden_image: vaultwarden/server:1.37.1
 vaultwarden_container_name: vaultwarden
 vaultwarden_install_dir: /opt/vaultwarden
 vaultwarden_data_dir: /opt/vaultwarden/data

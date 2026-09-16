@@ -1,5 +1,5 @@
 ---
-pgadmin_image: dpage/pgadmin4:latest
+pgadmin_image: dpage/pgadmin4:9.16
 pgadmin_container_name: pgadmin
 pgadmin_email: admin@omni.corp
 pgadmin_password: "{{ vault_pgadmin_password }}"
