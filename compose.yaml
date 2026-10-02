@@ -1,61 +1,59 @@
 services:
-  opencode:
+  workspace:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        USER_UID: ${USER_UID:-1000}
-        USER_GID: ${USER_GID:-1000}
-
-    image: homelab-iac-opencode:local
-    container_name: homelab-iac-opencode
 
     stdin_open: true
     tty: true
 
     working_dir: /workspace
 
+    env_file:
+      - ${HOME}/.config/opencode/9router.env
+      - ${HOME}/.config/opencode/go.env
+
     environment:
-      HOME: /home/opencode
+      HOME: /home/agent
       TERM: xterm-256color
       COLORTERM: truecolor
 
-      # Forward the host SSH agent instead of mounting private keys.
-      SSH_AUTH_SOCK: /tmp/ssh-agent.sock
+      DISPLAY: ${DISPLAY:-:0}
+
+      SSH_AUTH_SOCK: /ssh-agent
+
+      GIT_TERMINAL_PROMPT: "0"
 
       # Keep Ansible temporary files inside the container user's home.
-      ANSIBLE_LOCAL_TEMP: /home/opencode/.ansible/tmp
-      ANSIBLE_REMOTE_TEMP: /tmp/.ansible-${USER_UID:-1000}
-
-      # Avoid Git prompting indefinitely inside the agent.
-      GIT_TERMINAL_PROMPT: "1"
-
-      # Forward the host X11 display for clipboard sharing.
-      DISPLAY: ${DISPLAY:-:0}
+      ANSIBLE_LOCAL_TEMP: /home/agent/.ansible/tmp
+      ANSIBLE_REMOTE_TEMP: /tmp/.ansible-agent
 
     volumes:
       # The agent can access only this repository.
-      - .:/workspace
-
-      # Ansible Vault pass.
-      - ${HOME}/.vault_pass:/home/opencode/.vault_pass
+      - ${WORKSPACE_DIR:-.}:/workspace
 
       # Shared OpenCode configuration.
-      - ${HOME}/.config/opencode:/home/opencode/.config/opencode
+      - ${HOME}/.config/opencode:/home/agent/.config/opencode
 
       # Persistent OpenCode sessions/data.
-      - opencode-share:/home/opencode/.local/share/opencode
-      - opencode-state:/home/opencode/.local/state/opencode
+      - opencode-share:/home/agent/.local/share/opencode
+      - opencode-state:/home/agent/.local/state/opencode
+
+      # Persistent Codex
+      - ${HOME}/.config/codex:/home/agent/.codex
 
       # Forward loaded SSH keys without exposing their private files.
-      - ${SSH_AUTH_SOCK}:/tmp/ssh-agent.sock
+      - ${SSH_AUTH_SOCK}:/ssh-agent
 
       # SSH host aliases and host verification.
-      - ${HOME}/.ssh/config:/home/opencode/.ssh/config:ro
-      - ${HOME}/.ssh/known_hosts:/home/opencode/.ssh/known_hosts:ro
+      - ${HOME}/.ssh/config:/home/agent/.ssh/config:ro
+      - ${HOME}/.ssh/known_hosts:/home/agent/.ssh/known_hosts:ro
 
       # X11 clipboard.
       - /tmp/.X11-unix:/tmp/.X11-unix:ro
+
+      # Ansible Vault pass.
+      - ${HOME}/.vault_pass:/home/agent/.vault_pass
 
     security_opt:
       - no-new-privileges:true

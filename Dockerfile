@@ -1,8 +1,6 @@
-FROM opencode-base:latest
+FROM agents-base
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG USER_UID=1000
-ARG USER_GID=1000
 
 USER root
 
@@ -42,7 +40,7 @@ RUN mkdir -p \
         /opt/pipx \
         /opt/venv \
     && python3 -m venv /opt/venv \
-    && chown -R "${USER_UID}:${USER_GID}" \
+    && chown -R agent:agent \
         "${HOME}" \
         /opt/pipx \
         /opt/venv
@@ -50,7 +48,7 @@ RUN mkdir -p \
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
 
-USER ${USER_UID}:${USER_GID}
+USER agent
 
 # Install pipx and repository-wide Python CLI tools.
 RUN pip install --no-cache-dir --upgrade pip pipx \
