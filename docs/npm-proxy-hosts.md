@@ -32,7 +32,7 @@ Current NPM proxy hosts configuration extracted from CT 101 (proxy).
 
 ## SSL Certificates
 
-SSL-enabled hosts (containers, nas, network, proxy, cloud, docs, media, switch, database, ai-gateway, agent, vault) use custom certificates stored in `/data/custom_ssl/npm-*/`. Force-SSL (HTTP→HTTPS redirect) is **disabled** on all proxy hosts so container-to-container integrations (e.g. OnlyOffice→Nextcloud callbacks) work over plain HTTP without certificate trust issues.
+SSL-enabled hosts (containers, nas, network, proxy, cloud, docs, media, switch, database, ai-gateway, agent, vault) use custom certificates stored in `/data/custom_ssl/npm-*/`. Force-SSL (HTTP→HTTPS redirect) is **disabled** on all proxy hosts so container-to-container integrations (e.g. OnlyOffice→Nextcloud callbacks) work over plain HTTP without certificate trust issues. The single exception is `media.omni.corp`, which forces HTTPS because Immich v3 keeps the session in a `Secure` cookie: over plain HTTP the browser drops the cookie and login loops back to the sign-in page.
 
 ---
 
