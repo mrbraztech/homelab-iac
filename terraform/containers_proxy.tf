@@ -33,8 +33,8 @@ resource "proxmox_virtual_environment_container" "proxy" {
   }
 
   memory {
-    dedicated = 256
-    swap      = 256
+    dedicated = 1024
+    swap      = 512
   }
 
   disk {

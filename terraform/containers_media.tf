@@ -29,7 +29,7 @@ resource "proxmox_virtual_environment_container" "media" {
   }
 
   cpu {
-    cores = 2
+    cores = 4
   }
 
   memory {
