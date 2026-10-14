@@ -33,8 +33,8 @@ resource "proxmox_virtual_environment_container" "hearthlane_relay" {
   }
 
   memory {
-    dedicated = 256
-    swap      = 128
+    dedicated = 512
+    swap      = 256
   }
 
   disk {

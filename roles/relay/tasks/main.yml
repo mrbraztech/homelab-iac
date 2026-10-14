@@ -15,10 +15,10 @@
     group: "10001"
     mode: "0700"
 
-- name: Clone hearthlane-relay repository
+- name: Clone Hearthlane repository
   ansible.builtin.git:
     repo: "{{ relay_repo_url }}"
-    dest: "{{ relay_install_dir }}/src"
+    dest: "{{ relay_repo_dir }}"
     version: "{{ relay_repo_version }}"
     force: true
   notify: Restart relay

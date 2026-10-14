@@ -1,7 +1,7 @@
 services:
   relay:
     build:
-      context: ./src
+      context: "{{ relay_repo_dir }}/services/relay"
       dockerfile: deploy/Dockerfile
     image: hearthlane-relay:local
     container_name: "{{ relay_container_name }}"

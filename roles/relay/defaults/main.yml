@@ -1,7 +1,8 @@
 ---
 # Hearthlane Relay Docker deployment settings
-relay_repo_url: https://github.com/usehearthlane/hearthlane-relay.git
+relay_repo_url: https://github.com/usehearthlane/hearthlane.git
 relay_repo_version: main
+relay_repo_dir: /opt/hearthlane
 relay_install_dir: /opt/relay
 relay_data_dir: /opt/relay/data
 relay_container_name: hearthlane-relay
