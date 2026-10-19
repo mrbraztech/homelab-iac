@@ -8,6 +8,7 @@ pihole_custom_dns:
       - containers.omni.corp
       - dns.omni.corp
       - nas.omni.corp
+      - printers.omni.corp
       - proxy.omni.corp
       - site.omni.corp
       - monitor.omni.corp

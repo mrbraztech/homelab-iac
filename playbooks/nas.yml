@@ -9,6 +9,8 @@
     - postgres
     - redis
     - omv
+    - role: print_server
+      tags: [print_server]
     - minio
     - role: netdata
       vars:
@@ -62,6 +64,7 @@
         login_password: "{{ postgres_password }}"
         state: present
       loop: "{{ postgres_setup_users }}"
+      no_log: true
 
     - name: Ensure databases exist
       community.postgresql.postgresql_db:
@@ -73,6 +76,7 @@
         login_password: "{{ postgres_password }}"
         state: present
       loop: "{{ postgres_setup_databases }}"
+      no_log: true
 
     - name: Ensure extensions are installed
       community.postgresql.postgresql_ext:
@@ -85,3 +89,4 @@
         state: present
       loop: "{{ postgres_setup_extensions | subelements('extensions') }}"
       when: postgres_setup_extensions | length > 0
+      no_log: true

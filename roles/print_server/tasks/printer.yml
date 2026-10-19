@@ -1,0 +1,184 @@
+---
+- name: Create the SpliX build directory
+  ansible.builtin.file:
+    path: "{{ print_server_splix_build_root }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Download the SpliX source archive
+  ansible.builtin.get_url:
+    url: "{{ print_server_splix_archive_url }}"
+    dest: "{{ print_server_splix_build_root }}/splix-{{ print_server_splix_version }}.tar.xz"
+    checksum: "{{ print_server_splix_archive_checksum }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Extract the SpliX source archive
+  ansible.builtin.unarchive:
+    src: "{{ print_server_splix_build_root }}/splix-{{ print_server_splix_version }}.tar.xz"
+    dest: "{{ print_server_splix_build_root }}"
+    remote_src: true
+    owner: root
+    group: root
+    creates: "{{ print_server_splix_build_root }}/splix-{{ print_server_splix_version }}/Makefile"
+
+- name: Build the SpliX filter
+  ansible.builtin.command:
+    argv:
+      - make
+      - "rastertoqpdl_LIBS=-lcupsimage -lcups -lpthread -ljbig"
+      - "pstoqpdl_LIBS=-lcupsimage -lcups -ljbig"
+    chdir: "{{ print_server_splix_build_root }}/splix-{{ print_server_splix_version }}"
+    creates: "{{ print_server_splix_build_root }}/splix-{{ print_server_splix_version }}/optimized/rastertoqpdl"
+
+- name: Install the M2020 SpliX filter
+  ansible.builtin.copy:
+    src: "{{ print_server_splix_build_root }}/splix-{{ print_server_splix_version }}/optimized/rastertoqpdl"
+    dest: "/usr/lib/cups/filter/{{ print_server_splix_filter_name }}"
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Generate the Samsung PPD files
+  ansible.builtin.command:
+    cmd: ./compile.sh samsung.drv.in -I . -d ./
+    chdir: "{{ print_server_splix_build_root }}/splix-{{ print_server_splix_version }}/ppd"
+    creates: "{{ print_server_splix_build_root }}/splix-{{ print_server_splix_version }}/ppd/m2020.ppd"
+
+- name: Point the M2020 PPD to the versioned SpliX filter
+  ansible.builtin.replace:
+    path: "{{ print_server_splix_build_root }}/splix-{{ print_server_splix_version }}/ppd/m2020.ppd"
+    regexp: '^(\*cupsFilter2?:.*\s)rastertoqpdl("?)$'
+    replace: '\1{{ print_server_splix_filter_name }}\2'
+  register: print_server_ppd_filter
+
+- name: Create the local PPD directory
+  ansible.builtin.file:
+    path: "{{ print_server_splix_ppd_path | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install the M2020 PPD
+  ansible.builtin.copy:
+    src: "{{ print_server_splix_build_root }}/splix-{{ print_server_splix_version }}/ppd/m2020.ppd"
+    dest: "{{ print_server_splix_ppd_path }}"
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0644"
+  register: print_server_ppd_install
+
+- name: Discover USB printer devices
+  ansible.builtin.command:
+    argv:
+      - lpinfo
+      - -v
+  register: print_server_devices
+  changed_when: false
+  check_mode: false
+  when: print_server_printer_uri | length == 0
+
+- name: Determine the effective printer URI
+  ansible.builtin.set_fact:
+    print_server_effective_uri: >-
+      {{
+        print_server_printer_uri
+        if print_server_printer_uri | length > 0
+        else (
+          print_server_devices.stdout_lines
+          | select('match', print_server_usb_uri_pattern)
+          | map('regex_replace', '^direct\s+', '')
+          | list
+          | first
+          | default('', true)
+        )
+      }}
+
+- name: Require a USB printer URI
+  ansible.builtin.assert:
+    that:
+      - print_server_effective_uri | length > 0
+    fail_msg: >-
+      No USB printer matching '{{ print_server_usb_uri_pattern }}' was detected.
+      Connect the printer, run 'lpinfo -v' on the NAS to identify the stable
+      device URI, and set print_server_printer_uri explicitly if needed.
+
+- name: Read the existing CUPS queue
+  ansible.builtin.command:
+    argv:
+      - lpstat
+      - -v
+      - "{{ print_server_printer_name }}"
+  register: print_server_queue
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Check whether the queue uses the M2020 SpliX filter
+  ansible.builtin.command:
+    argv:
+      - grep
+      - -q
+      - "{{ print_server_splix_filter_name }}"
+      - "/etc/cups/ppd/{{ print_server_printer_name }}.ppd"
+  register: print_server_queue_filter
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: print_server_queue.rc == 0
+
+- name: Register or update the CUPS queue
+  ansible.builtin.command:
+    argv:
+      - lpadmin
+      - -p
+      - "{{ print_server_printer_name }}"
+      - -E
+      - -v
+      - "{{ print_server_effective_uri }}"
+      - -P
+      - "{{ print_server_splix_ppd_path }}"
+      - -D
+      - "{{ print_server_printer_description }}"
+      - -L
+      - "{{ print_server_printer_location }}"
+      - -o
+      - printer-is-shared=true
+  changed_when: true
+  when: >-
+    print_server_queue.rc != 0
+    or print_server_effective_uri not in print_server_queue.stdout
+    or (print_server_queue_filter.rc | default(1)) != 0
+    or print_server_ppd_install is changed
+    or print_server_ppd_filter is changed
+
+- name: Read the CUPS default printer
+  ansible.builtin.command:
+    argv:
+      - lpstat
+      - -d
+  register: print_server_default
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: print_server_make_default
+
+- name: Set the CUPS default printer
+  ansible.builtin.command:
+    argv:
+      - lpadmin
+      - -d
+      - "{{ print_server_printer_name }}"
+  changed_when: true
+  when: >-
+    print_server_make_default
+    and (
+      (print_server_default.rc | default(1)) != 0
+      or print_server_printer_name not in (print_server_default.stdout | default(''))
+    )

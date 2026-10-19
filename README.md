@@ -114,7 +114,7 @@ homelab-iac/
 │           ├── mail/vault.yml
 │           └── vault/vault.yml
 ├── playbooks/
-│   ├── nas.yml                  # NAS: bootstrap, docker, postgres, redis, omv
+│   ├── nas.yml                  # NAS: bootstrap, docker, postgres, redis, omv, print_server
 │   ├── tools.yml                # Tools: bootstrap, docker, cyberchef, pgadmin
 │   ├── ai-gateway.yml            # AI gateway: bootstrap, docker, ai_gateway
 │   ├── proxy.yml                # Proxy: bootstrap, docker, nginx_proxy_manager
@@ -252,7 +252,7 @@ All hosts in `inventories/lab/hosts.yml` under the `lab` group:
 
 | Host | IP | Playbook | Services |
 |---|---|---|---|
-| nas | 192.168.10.12 | `nas.yml` | PostgreSQL, Redis, OMV, MinIO |
+| nas | 192.168.10.12 | `nas.yml` | PostgreSQL, Redis, OMV, MinIO, CUPS print server |
 | tools | 192.168.10.14 | `tools.yml` | CyberChef, pgAdmin |
 | ai-gateway | 192.168.10.18 | `ai-gateway.yml` | AI gateway (9Router + Headroom) |
 | proxy | 192.168.10.3 | `proxy.yml` | Nginx Proxy Manager |
@@ -266,6 +266,8 @@ All hosts in `inventories/lab/hosts.yml` under the `lab` group:
 | agent | 192.168.10.19 | `agent.yml` | Agent (Hermes AI agent) |
 | mail | 192.168.10.5 | `mail.yml` | Postfix smarthost (SMTP2GO) |
 | vault | 192.168.10.20 | `vault.yml` | Vaultwarden (Bitwarden-compatible) |
+
+NAS print server details: [`docs/print-server.md`](docs/print-server.md).
 
 ### Run a playbook
 
@@ -358,7 +360,7 @@ Both must pass. Pre-commit hooks run these automatically.
 ├── .5   — Mail (Postfix smarthost via SMTP2GO)
 ├── .10  — Proxmox host
 ├── .11  — Network controller (Omada)
-├── .12  — NAS (PostgreSQL, Redis, OMV, MinIO)
+├── .12  — NAS (PostgreSQL, Redis, OMV, MinIO, CUPS print server)
 ├── .13  — Site (Frigate NVR)
 ├── .14  — Tools (CyberChef, pgAdmin)
 ├── .15  — Cloud (Nextcloud + OnlyOffice)

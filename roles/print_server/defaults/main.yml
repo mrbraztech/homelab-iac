@@ -1,0 +1,38 @@
+---
+print_server_packages:
+  - cups
+  - cups-client
+  - printer-driver-splix
+
+print_server_build_packages:
+  - build-essential
+  - cups-ppdc
+  - libcups2-dev
+  - libcupsimage2-dev
+  - libjbig-dev
+  - pkg-config
+  - xz-utils
+
+print_server_listen_address: "{{ ansible_facts.default_ipv4.address | default(ansible_host) }}"
+print_server_port: 631
+print_server_allowed_networks:
+  - 192.168.10.0/24
+print_server_admin_networks: []
+print_server_web_interface: true
+
+print_server_printer_name: Samsung_M2020W
+print_server_printer_description: "Samsung Xpress M2020W"
+print_server_printer_location: "USB - NAS"
+print_server_printer_uri: ""
+print_server_usb_uri_pattern: '^direct usb://Samsung/.*M2020.*'
+print_server_make_default: false
+
+print_server_splix_version: "2.0.2"
+print_server_splix_archive_url: >-
+  {{ 'https://github.com/OpenPrinting/splix/releases/download/'
+  ~ print_server_splix_version
+  ~ '/splix-' ~ print_server_splix_version ~ '.tar.xz' }}
+print_server_splix_archive_checksum: "sha256:6271c35f8ab8d2565962c0a6140aa191226430f7c99cb3355f4d499a8938f068"
+print_server_splix_build_root: /opt/splix
+print_server_splix_filter_name: rastertoqpdl-m2020
+print_server_splix_ppd_path: /usr/share/cups/ppd/samsung-m2020.ppd

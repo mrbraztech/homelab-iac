@@ -1,4 +1,4 @@
-# NAS Services (PostgreSQL + Redis + OMV)
+# NAS Services (PostgreSQL + Redis + OMV + Print Server)
 
 ## Overview
 
@@ -10,6 +10,7 @@ The `nas.yml` playbook manages the NAS host:
 - **`postgres`**: PostgreSQL container
 - **`redis`**: Redis container
 - **`omv`**: OpenMediaVault shares
+- **`print_server`**: CUPS + SpliX USB print server
 
 **Play 2** — database setup (inline tasks):
 - Create databases (`immich`, `nextcloud`)
@@ -53,6 +54,31 @@ The `nas.yml` playbook manages the NAS host:
 | `omv_nfs_client` | `192.168.10.0/24` | NFS client network |
 | `omv_nfs_shares` | `[]` | NFS shares to create |
 | `omv_smb_shares` | `[]` | SMB shares to create |
+
+## Print Server
+
+The `print_server` role installs CUPS directly on the NAS and shares the Samsung
+Xpress M2020W USB printer over IPP. It does not create a container and does not
+modify OMV-managed configuration.
+
+Key variables (see `roles/print_server/defaults/main.yml`):
+
+| Variable | Default | Description |
+|---|---|---|
+| `print_server_printer_name` | `Samsung_M2020W` | CUPS queue name |
+| `print_server_listen_address` | NAS IPv4 from Ansible facts | CUPS `Listen` address |
+| `print_server_allowed_networks` | `192.168.10.0/24` | Networks allowed to print |
+| `print_server_printer_uri` | empty | Optional explicit USB device URI |
+| `print_server_splix_version` | `2.0.2` | Pinned SpliX release with M2020 support |
+
+Printer URL:
+
+```text
+ipp://<nas-ip>:631/printers/<printer-name>
+```
+
+Full architecture, client setup, validation, and troubleshooting:
+[`docs/print-server.md`](print-server.md).
 
 ## Secrets
 

@@ -41,12 +41,14 @@
     owner: root
     group: root
     mode: "0644"
+  no_log: true
   notify: Restart PostgreSQL
 
 - name: Ensure PostgreSQL container is running
   community.docker.docker_compose_v2:
     project_src: "{{ postgres_install_dir }}"
     state: present
+  no_log: true
   when: not postgres_container_running
 
 - name: Wait for PostgreSQL to be ready

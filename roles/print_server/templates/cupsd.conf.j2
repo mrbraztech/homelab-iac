@@ -1,0 +1,154 @@
+#
+# CUPS scheduler configuration managed by Ansible (print_server role).
+#
+
+LogLevel warn
+PageLogFormat
+MaxLogSize 0
+
+ErrorPolicy retry-job
+
+Listen /run/cups/cups.sock
+{% if print_server_listen_address in ['0.0.0.0', '::'] %}
+Listen {{ print_server_listen_address }}:{{ print_server_port }}
+{% else %}
+Listen 127.0.0.1:{{ print_server_port }}
+{% if print_server_listen_address != '127.0.0.1' %}
+Listen {{ print_server_listen_address }}:{{ print_server_port }}
+{% endif %}
+{% endif %}
+
+Browsing Yes
+BrowseLocalProtocols dnssd
+
+DefaultAuthType Basic
+WebInterface {{ 'Yes' if print_server_web_interface else 'No' }}
+
+ServerAlias *
+
+<Location />
+  Order allow,deny
+  Allow localhost
+{% for network in print_server_allowed_networks %}
+  Allow from {{ network }}
+{% endfor %}
+</Location>
+
+<Location /admin>
+  AuthType Default
+  Require user @SYSTEM
+  Order allow,deny
+  Allow localhost
+{% for network in print_server_admin_networks %}
+  Allow from {{ network }}
+{% endfor %}
+</Location>
+
+<Location /admin/conf>
+  AuthType Default
+  Require user @SYSTEM
+  Order allow,deny
+  Allow localhost
+{% for network in print_server_admin_networks %}
+  Allow from {{ network }}
+{% endfor %}
+</Location>
+
+<Location /admin/log>
+  AuthType Default
+  Require user @SYSTEM
+  Order allow,deny
+  Allow localhost
+{% for network in print_server_admin_networks %}
+  Allow from {{ network }}
+{% endfor %}
+</Location>
+
+<Policy default>
+  JobPrivateAccess default
+  JobPrivateValues default
+  SubscriptionPrivateAccess default
+  SubscriptionPrivateValues default
+
+  <Limit Create-Job Print-Job Print-URI Validate-Job>
+    Order deny,allow
+  </Limit>
+
+  <Limit Send-Document Send-URI Hold-Job Release-Job Restart-Job Purge-Jobs Set-Job-Attributes Create-Job-Subscription Renew-Subscription Cancel-Subscription Get-Notifications Reprocess-Job Cancel-Current-Job Suspend-Current-Job Resume-Job Cancel-My-Jobs Close-Job CUPS-Move-Job>
+    Require user @OWNER @SYSTEM
+    Order deny,allow
+  </Limit>
+
+  <Limit CUPS-Get-Document>
+    AuthType Default
+    Require user @OWNER @SYSTEM
+    Order deny,allow
+  </Limit>
+
+  <Limit CUPS-Add-Modify-Printer CUPS-Delete-Printer CUPS-Add-Modify-Class CUPS-Delete-Class CUPS-Set-Default CUPS-Get-Devices>
+    AuthType Default
+    Require user @SYSTEM
+    Order deny,allow
+  </Limit>
+
+  <Limit Pause-Printer Resume-Printer Enable-Printer Disable-Printer Pause-Printer-After-Current-Job Hold-New-Jobs Release-Held-New-Jobs Deactivate-Printer Activate-Printer Restart-Printer Shutdown-Printer Startup-Printer Promote-Job Schedule-Job-After Cancel-Jobs CUPS-Accept-Jobs CUPS-Reject-Jobs>
+    AuthType Default
+    Require user @SYSTEM
+    Order deny,allow
+  </Limit>
+
+  <Limit Cancel-Job>
+    Require user @OWNER @SYSTEM
+    Order deny,allow
+  </Limit>
+
+  <Limit CUPS-Authenticate-Job>
+    AuthType Default
+    Require user @OWNER @SYSTEM
+    Order deny,allow
+  </Limit>
+
+  <Limit All>
+    Order deny,allow
+  </Limit>
+</Policy>
+
+<Policy authenticated>
+  JobPrivateAccess default
+  JobPrivateValues default
+  SubscriptionPrivateAccess default
+  SubscriptionPrivateValues default
+
+  <Limit Create-Job Print-Job Print-URI Validate-Job>
+    AuthType Default
+    Order deny,allow
+  </Limit>
+
+  <Limit Send-Document Send-URI Hold-Job Release-Job Restart-Job Purge-Jobs Set-Job-Attributes Create-Job-Subscription Renew-Subscription Cancel-Subscription Get-Notifications Reprocess-Job Cancel-Current-Job Suspend-Current-Job Resume-Job Cancel-My-Jobs Close-Job CUPS-Move-Job CUPS-Get-Document>
+    AuthType Default
+    Require user @OWNER @SYSTEM
+    Order deny,allow
+  </Limit>
+
+  <Limit CUPS-Add-Modify-Printer CUPS-Delete-Printer CUPS-Add-Modify-Class CUPS-Delete-Class CUPS-Set-Default>
+    AuthType Default
+    Require user @SYSTEM
+    Order deny,allow
+  </Limit>
+
+  <Limit Pause-Printer Resume-Printer Enable-Printer Disable-Printer Pause-Printer-After-Current-Job Hold-New-Jobs Release-Held-New-Jobs Deactivate-Printer Activate-Printer Restart-Printer Shutdown-Printer Startup-Printer Promote-Job Schedule-Job-After Cancel-Jobs CUPS-Accept-Jobs CUPS-Reject-Jobs>
+    AuthType Default
+    Require user @SYSTEM
+    Order deny,allow
+  </Limit>
+
+  <Limit Cancel-Job CUPS-Authenticate-Job>
+    AuthType Default
+    Require user @OWNER @SYSTEM
+    Order deny,allow
+  </Limit>
+
+  <Limit All>
+    Order deny,allow
+  </Limit>
+</Policy>

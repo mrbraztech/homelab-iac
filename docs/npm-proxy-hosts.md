@@ -12,6 +12,7 @@ Current NPM proxy hosts configuration extracted from CT 101 (proxy).
 | containers.omni.corp | 192.168.10.10 | 8006 | Yes | Proxmox web UI |
 | dns.omni.corp | 192.168.10.2 | 80 | No | Pi-hole admin (dns CT) |
 | nas.omni.corp | 192.168.10.12 | 80 | Yes | OpenMediaVault (nas) |
+| printers.omni.corp | 192.168.10.12 | 631 | Yes | CUPS web UI + authenticated `/admin` (root/SystemGroup, HTTPS upstream with self-signed cert) |
 | network.omni.corp | 192.168.10.11 | 8043 | Yes | Network controller (network CT) |
 | proxy.omni.corp | 192.168.10.3 | 81 | Yes | NPM admin interface |
 | site.omni.corp | 192.168.10.13 | 5000 | No | Frigate NVR (site CT) |
@@ -32,7 +33,9 @@ Current NPM proxy hosts configuration extracted from CT 101 (proxy).
 
 ## SSL Certificates
 
-SSL-enabled hosts (containers, nas, network, proxy, cloud, docs, media, switch, database, ai-gateway, agent, vault) use custom certificates stored in `/data/custom_ssl/npm-*/`. Force-SSL (HTTP→HTTPS redirect) is **disabled** on all proxy hosts so container-to-container integrations (e.g. OnlyOffice→Nextcloud callbacks) work over plain HTTP without certificate trust issues. The single exception is `media.omni.corp`, which forces HTTPS because Immich v3 keeps the session in a `Secure` cookie: over plain HTTP the browser drops the cookie and login loops back to the sign-in page.
+SSL-enabled hosts (containers, nas, printers, network, proxy, cloud, docs, media, switch, database, ai-gateway, agent, vault) use custom certificates stored in `/data/custom_ssl/npm-*/`. Force-SSL (HTTP→HTTPS redirect) is **disabled** on all proxy hosts so container-to-container integrations (e.g. OnlyOffice→Nextcloud callbacks) work over plain HTTP without certificate trust issues. The single exception is `media.omni.corp`, which forces HTTPS because Immich v3 keeps the session in a `Secure` cookie: over plain HTTP the browser drops the cookie and login loops back to the sign-in page.
+
+`printers.omni.corp` proxies to CUPS over HTTPS on port 631. Because CUPS uses a self-signed certificate, this host's advanced configuration sets `proxy_ssl_verify off` for the private NPM-to-CUPS hop. CUPS authentication remains enabled and administrator access is limited to the NPM proxy address.
 
 ---
 

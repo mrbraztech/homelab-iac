@@ -1,0 +1,100 @@
+---
+- name: Validate print server settings
+  ansible.builtin.assert:
+    that:
+      - print_server_allowed_networks | length > 0
+      - "'0.0.0.0/0' not in print_server_allowed_networks"
+      - "'::/0' not in print_server_allowed_networks"
+      - print_server_printer_name is match('^[A-Za-z0-9_.-]+$')
+    fail_msg: >-
+      print_server_allowed_networks must contain at least one LAN network and
+      must not allow every IPv4/IPv6 address. print_server_printer_name must
+      contain only letters, digits, dots, underscores, or hyphens.
+
+- name: Install CUPS and SpliX packages
+  ansible.builtin.apt:
+    name: "{{ print_server_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install SpliX build dependencies
+  ansible.builtin.apt:
+    name: "{{ print_server_build_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Check whether the CUPS USB backend is enabled
+  ansible.builtin.stat:
+    path: /usr/lib/cups/backend/usb
+  register: print_server_usb_backend
+
+- name: Enable the CUPS USB backend
+  ansible.builtin.file:
+    src: /usr/lib/cups/backend-available/usb
+    dest: /usr/lib/cups/backend/usb
+    state: link
+  when:
+    - not print_server_usb_backend.stat.exists
+    - not ansible_check_mode
+  notify: Restart CUPS
+
+- name: Check whether the CUPS daemon is installed
+  ansible.builtin.stat:
+    path: /usr/sbin/cupsd
+  register: print_server_cupsd_bin
+
+- name: Check for an existing CUPS configuration
+  ansible.builtin.stat:
+    path: /etc/cups/cupsd.conf
+  register: print_server_cupsd_conf
+
+- name: Back up the original CUPS configuration
+  ansible.builtin.copy:
+    src: /etc/cups/cupsd.conf
+    dest: /etc/cups/cupsd.conf.pre-ansible
+    remote_src: true
+    force: false
+    owner: root
+    group: lp
+    mode: "0600"
+  when: print_server_cupsd_conf.stat.exists
+
+- name: Deploy the CUPS configuration
+  ansible.builtin.template:
+    src: cupsd.conf.j2
+    dest: /etc/cups/cupsd.conf
+    owner: root
+    group: lp
+    mode: "0640"
+    validate: /usr/sbin/cupsd -t -c %s
+  when: print_server_cupsd_bin.stat.exists
+  notify: Restart CUPS
+
+- name: Check for the CUPS socket activation unit
+  ansible.builtin.stat:
+    path: /lib/systemd/system/cups.socket
+  register: print_server_cups_socket
+
+- name: Enable and start the CUPS socket
+  ansible.builtin.systemd:
+    name: cups.socket
+    state: started
+    enabled: true
+  when: print_server_cups_socket.stat.exists
+
+- name: Enable and start CUPS
+  ansible.builtin.systemd:
+    name: cups
+    state: started
+    enabled: true
+    daemon_reload: true
+  when: print_server_cupsd_bin.stat.exists
+
+- name: Apply pending CUPS restarts
+  ansible.builtin.meta: flush_handlers
+
+- name: Configure the USB printer
+  ansible.builtin.import_tasks: printer.yml
+  when: not ansible_check_mode
