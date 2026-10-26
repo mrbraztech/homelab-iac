@@ -3,7 +3,7 @@ default_bits = {{ internal_ca_key_size }}
 prompt = no
 default_md = sha256
 distinguished_name = dn
-req_extensions = v3_req
+req_extensions = req_ext
 
 [dn]
 C={{ internal_ca_country }}
@@ -12,9 +12,15 @@ L={{ internal_ca_locality }}
 O={{ internal_ca_organization }}
 CN={{ domain.common_name | default(domain.name) }}
 
+[req_ext]
+subjectAltName = @alt_names
+
 [v3_req]
-keyUsage = keyEncipherment, dataEncipherment
+basicConstraints = critical, CA:FALSE
+keyUsage = critical, digitalSignature, keyEncipherment
 extendedKeyUsage = serverAuth
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid, issuer
 subjectAltName = @alt_names
 
 [alt_names]

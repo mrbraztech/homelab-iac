@@ -1,4 +1,12 @@
 ---
+- name: Validate certificate lifecycle options
+  ansible.builtin.assert:
+    that:
+      - not (internal_ca_force_certificate_renewal | bool and internal_ca_rotate_certificate_keys | bool)
+    fail_msg: >-
+      internal_ca_force_certificate_renewal and internal_ca_rotate_certificate_keys
+      cannot be enabled at the same time
+
 - name: Ensure CA directories exist
   ansible.builtin.file:
     path: "{{ item }}"
@@ -11,20 +19,37 @@
     - "{{ internal_ca_base_dir }}/certs"
     - "{{ internal_ca_base_dir }}/private"
     - "{{ internal_ca_base_dir }}/csr"
+    - "{{ internal_ca_backup_dir }}"
 
 - name: Check if CA root key exists
   ansible.builtin.stat:
     path: "{{ internal_ca_base_dir }}/private/ca.key"
   register: internal_ca_root_key
 
+- name: Check if CA root certificate exists
+  ansible.builtin.stat:
+    path: "{{ internal_ca_base_dir }}/certs/ca.crt"
+  register: internal_ca_root_cert
+
+- name: Assert the CA root key pair is present or absent together
+  ansible.builtin.assert:
+    that:
+      - internal_ca_root_key.stat.exists == internal_ca_root_cert.stat.exists
+    fail_msg: >-
+      Only one part of the CA root key pair exists.
+      Refusing to generate or replace the root CA automatically.
+
 - name: Generate CA root private key
   ansible.builtin.command:
-    cmd: >
-      openssl genrsa
-      -out {{ internal_ca_base_dir }}/private/ca.key
-      {{ internal_ca_key_size }}
+    argv:
+      - openssl
+      - genrsa
+      - -out
+      - "{{ internal_ca_base_dir }}/private/ca.key"
+      - "{{ internal_ca_key_size }}"
     creates: "{{ internal_ca_base_dir }}/private/ca.key"
   when: not internal_ca_root_key.stat.exists
+  no_log: true
 
 - name: Set CA root key permissions
   ansible.builtin.file:
@@ -33,30 +58,119 @@
     group: root
     mode: "0600"
 
-- name: Check if CA root certificate exists
-  ansible.builtin.stat:
-    path: "{{ internal_ca_base_dir }}/certs/ca.crt"
-  register: internal_ca_root_cert
-
-- name: Deploy CA subject template
-  ansible.builtin.template:
-    src: ca_subject.j2
-    dest: "{{ internal_ca_base_dir }}/ca_subject.txt"
-    owner: root
-    group: root
-    mode: "0644"
-  when: not internal_ca_root_cert.stat.exists
-
 - name: Generate CA root certificate
-  ansible.builtin.shell:
-    cmd: >
-      openssl req -x509 -new -nodes
-      -key {{ internal_ca_base_dir }}/private/ca.key
-      -sha256 -days {{ internal_ca_validity_days }}
-      -out {{ internal_ca_base_dir }}/certs/ca.crt
-      -subj "$(cat {{ internal_ca_base_dir }}/ca_subject.txt)"
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - req
+      - -x509
+      - -new
+      - -nodes
+      - -key
+      - "{{ internal_ca_base_dir }}/private/ca.key"
+      - -sha256
+      - -days
+      - "{{ internal_ca_validity_days }}"
+      - -out
+      - "{{ internal_ca_base_dir }}/certs/ca.crt"
+      - -subj
+      - >-
+        {{ ('/C=' ~ internal_ca_country ~ '/ST=' ~ internal_ca_state ~
+            '/L=' ~ internal_ca_locality ~ '/O=' ~ internal_ca_organization ~
+            '/CN=' ~ internal_ca_common_name) }}
+      - -addext
+      - basicConstraints=critical,CA:TRUE
+      - -addext
+      - keyUsage=critical,keyCertSign,cRLSign
+      - -addext
+      - subjectKeyIdentifier=hash
+      - -addext
+      - authorityKeyIdentifier=keyid:always,issuer
     creates: "{{ internal_ca_base_dir }}/certs/ca.crt"
   when: not internal_ca_root_cert.stat.exists
+
+- name: Validate CA root private key
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - pkey
+      - -in
+      - "{{ internal_ca_base_dir }}/private/ca.key"
+      - -check
+      - -noout
+  register: internal_ca_root_key_check
+  changed_when: false
+  failed_when: "'is valid' not in internal_ca_root_key_check.stdout"
+  no_log: true
+
+- name: Read CA root certificate public key
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -in
+      - "{{ internal_ca_base_dir }}/certs/ca.crt"
+      - -noout
+      - -pubkey
+  register: internal_ca_root_cert_public_key
+  changed_when: false
+
+- name: Read CA root private key public key
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - pkey
+      - -in
+      - "{{ internal_ca_base_dir }}/private/ca.key"
+      - -pubout
+  register: internal_ca_root_key_public_key
+  changed_when: false
+  no_log: true
+
+- name: Assert CA root certificate and private key match
+  ansible.builtin.assert:
+    that:
+      - internal_ca_root_cert_public_key.stdout == internal_ca_root_key_public_key.stdout
+    fail_msg: "The CA root certificate and private key do not match"
+
+- name: Verify CA root certificate is currently valid
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -checkend
+      - "0"
+      - -noout
+      - -in
+      - "{{ internal_ca_base_dir }}/certs/ca.crt"
+  changed_when: false
+
+- name: Inspect CA root certificate extensions
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -in
+      - "{{ internal_ca_base_dir }}/certs/ca.crt"
+      - -noout
+      - -text
+  register: internal_ca_root_cert_inspection
+  changed_when: false
+
+- name: Assert CA root basic constraints
+  ansible.builtin.assert:
+    that:
+      - "'CA:TRUE' in internal_ca_root_cert_inspection.stdout"
+    fail_msg: "The CA root certificate does not contain basicConstraints CA:TRUE"
+
+- name: Warn when the existing CA root certificate lacks key usage
+  ansible.builtin.debug:
+    msg: >-
+      The existing CA root certificate does not contain the keyUsage extension.
+      Replacing the root CA is intentionally out of scope and requires a separate migration.
+  when: >-
+    'Certificate Sign' not in internal_ca_root_cert_inspection.stdout
+    or 'CRL Sign' not in internal_ca_root_cert_inspection.stdout
 
 - name: Include domain certificate tasks
   ansible.builtin.include_tasks: issue_certificate.yml

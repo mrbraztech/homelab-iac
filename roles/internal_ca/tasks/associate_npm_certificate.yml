@@ -1,0 +1,32 @@
+---
+- name: Find NPM proxy host for {{ internal_ca_npm_proxy_domain }}
+  ansible.builtin.set_fact:
+    internal_ca_npm_proxy_host_matches: >-
+      {{ internal_ca_npm_existing_hosts.json
+         | selectattr('domain_names', 'contains', internal_ca_npm_proxy_domain)
+         | list }}
+
+- name: Assert NPM proxy host is unique for {{ internal_ca_npm_proxy_domain }}
+  ansible.builtin.assert:
+    that:
+      - internal_ca_npm_proxy_host_matches | length == 1
+    fail_msg: >-
+      Expected exactly one NPM proxy host containing
+      {{ internal_ca_npm_proxy_domain }}, found
+      {{ internal_ca_npm_proxy_host_matches | length }}
+
+- name: Associate certificate with {{ internal_ca_npm_proxy_domain }}
+  ansible.builtin.uri:
+    url: "{{ nginx_proxy_manager_api_url }}/nginx/proxy-hosts/{{ (internal_ca_npm_proxy_host_matches | first).id }}"
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ internal_ca_npm_auth.json.token }}"
+    body_format: json
+    body:
+      certificate_id: "{{ internal_ca_npm_certificate_id }}"
+    status_code: 200
+  changed_when: true
+  when: >-
+    (internal_ca_npm_proxy_host_matches | first).certificate_id | int
+    != internal_ca_npm_certificate_id | int
+  notify: Reload Nginx Proxy Manager

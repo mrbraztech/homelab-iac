@@ -1,66 +1,427 @@
 ---
-- name: Check if domain certificate exists
+- name: Set certificate paths for {{ domain.name }}
+  ansible.builtin.set_fact:
+    internal_ca_domain_cert_path: "{{ internal_ca_base_dir }}/certs/{{ domain.name }}.crt"
+    internal_ca_domain_key_path: "{{ internal_ca_base_dir }}/private/{{ domain.name }}.key"
+    internal_ca_domain_csr_path: "{{ internal_ca_base_dir }}/csr/{{ domain.name }}.csr"
+    internal_ca_domain_cnf_path: "{{ internal_ca_base_dir }}/csr/{{ domain.name }}.cnf"
+    internal_ca_domain_fullchain_path: "{{ internal_ca_base_dir }}/certs/{{ domain.name }}.fullchain.crt"
+
+- name: Check domain certificate files for {{ domain.name }}
   ansible.builtin.stat:
-    path: "{{ internal_ca_base_dir }}/certs/{{ domain.name }}.crt"
-  register: internal_ca_domain_cert
+    path: "{{ item }}"
+  loop:
+    - "{{ internal_ca_domain_cert_path }}"
+    - "{{ internal_ca_domain_key_path }}"
+    - "{{ internal_ca_domain_fullchain_path }}"
+  register: internal_ca_domain_files
 
-- name: Generate domain private key
+- name: Check remaining certificate validity for {{ domain.name }}
   ansible.builtin.command:
-    cmd: >
-      openssl genrsa
-      -out {{ internal_ca_base_dir }}/private/{{ domain.name }}.key
-      {{ internal_ca_key_size }}
-    creates: "{{ internal_ca_base_dir }}/private/{{ domain.name }}.key"
-  when: not internal_ca_domain_cert.stat.exists
+    argv:
+      - openssl
+      - x509
+      - -checkend
+      - "{{ internal_ca_cert_renewal_threshold_days | int * 86400 }}"
+      - -noout
+      - -in
+      - "{{ internal_ca_domain_cert_path }}"
+  register: internal_ca_domain_cert_expiry
+  changed_when: false
+  failed_when: false
+  when: internal_ca_domain_files.results[0].stat.exists
 
-- name: Set domain key permissions
+- name: Verify existing domain certificate against the CA for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - verify
+      - -CAfile
+      - "{{ internal_ca_base_dir }}/certs/ca.crt"
+      - "{{ internal_ca_domain_cert_path }}"
+  register: internal_ca_domain_cert_verify
+  changed_when: false
+  failed_when: false
+  when: internal_ca_domain_files.results[0].stat.exists
+
+- name: Inspect existing domain certificate for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -noout
+      - -text
+      - -in
+      - "{{ internal_ca_domain_cert_path }}"
+  register: internal_ca_domain_cert_inspection
+  changed_when: false
+  failed_when: false
+  when: internal_ca_domain_files.results[0].stat.exists
+
+- name: Check existing certificate SAN coverage for {{ domain.name }}
+  ansible.builtin.set_fact:
+    internal_ca_domain_cert_san_ok: >-
+      {{ (domain.san | default([domain.name]) | map('regex_replace', '^', 'DNS:')
+          | select('in', internal_ca_domain_cert_inspection.stdout | default(''))
+          | list | length)
+         == (domain.san | default([domain.name]) | length) }}
+
+- name: Determine whether the domain certificate must be issued for {{ domain.name }}
+  ansible.builtin.set_fact:
+    internal_ca_domain_new_key_needed: >-
+      {{ internal_ca_rotate_certificate_keys | bool
+         or not internal_ca_domain_files.results[1].stat.exists }}
+    internal_ca_domain_needs_issue: >-
+      {{ internal_ca_rotate_certificate_keys | bool
+         or internal_ca_force_certificate_renewal | bool
+         or not internal_ca_domain_files.results[0].stat.exists
+         or not internal_ca_domain_files.results[1].stat.exists
+         or (internal_ca_domain_cert_expiry.rc | default(0) | int) != 0
+         or (internal_ca_domain_cert_verify.rc | default(0) | int) != 0
+         or not internal_ca_domain_cert_san_ok | bool
+         or 'CA:FALSE' not in (internal_ca_domain_cert_inspection.stdout | default(''))
+         or 'Digital Signature' not in (internal_ca_domain_cert_inspection.stdout | default(''))
+         or 'TLS Web Server Authentication' not in (internal_ca_domain_cert_inspection.stdout | default('')) }}
+
+- name: Set staged certificate paths for {{ domain.name }}
+  ansible.builtin.set_fact:
+    internal_ca_domain_staging_key_path: "{{ internal_ca_domain_key_path }}.new"
+    internal_ca_domain_staging_csr_path: "{{ internal_ca_domain_csr_path }}.new"
+    internal_ca_domain_staging_cert_path: "{{ internal_ca_domain_cert_path }}.new"
+    internal_ca_domain_staging_fullchain_path: "{{ internal_ca_domain_fullchain_path }}.new"
+    internal_ca_domain_issue_key_path: >-
+      {{ (internal_ca_domain_key_path ~ '.new')
+         if internal_ca_domain_new_key_needed | bool
+         else internal_ca_domain_key_path }}
+
+- name: Remove stale staged certificate files for {{ domain.name }}
   ansible.builtin.file:
-    path: "{{ internal_ca_base_dir }}/private/{{ domain.name }}.key"
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ internal_ca_domain_staging_key_path }}"
+    - "{{ internal_ca_domain_staging_csr_path }}"
+    - "{{ internal_ca_domain_staging_cert_path }}"
+    - "{{ internal_ca_domain_staging_fullchain_path }}"
+  when: internal_ca_domain_needs_issue | bool
+
+- name: Generate staged domain private key for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - genrsa
+      - -out
+      - "{{ internal_ca_domain_staging_key_path }}"
+      - "{{ internal_ca_key_size }}"
+  when:
+    - internal_ca_domain_needs_issue | bool
+    - internal_ca_domain_new_key_needed | bool
+  changed_when: true
+  no_log: true
+
+- name: Set staged domain private key permissions for {{ domain.name }}
+  ansible.builtin.file:
+    path: "{{ internal_ca_domain_staging_key_path }}"
     owner: root
     group: root
     mode: "0600"
+  when:
+    - internal_ca_domain_needs_issue | bool
+    - internal_ca_domain_new_key_needed | bool
 
-- name: Create OpenSSL config for domain
+- name: Deploy domain certificate request configuration for {{ domain.name }}
   ansible.builtin.template:
     src: domain.cnf.j2
-    dest: "{{ internal_ca_base_dir }}/csr/{{ domain.name }}.cnf"
+    dest: "{{ internal_ca_domain_cnf_path }}"
     owner: root
     group: root
     mode: "0644"
-  when: not internal_ca_domain_cert.stat.exists
+  when: internal_ca_domain_needs_issue | bool
 
-- name: Generate domain CSR
+- name: Generate staged domain certificate request for {{ domain.name }}
   ansible.builtin.command:
-    cmd: >
-      openssl req -new
-      -key {{ internal_ca_base_dir }}/private/{{ domain.name }}.key
-      -out {{ internal_ca_base_dir }}/csr/{{ domain.name }}.csr
-      -config {{ internal_ca_base_dir }}/csr/{{ domain.name }}.cnf
-    creates: "{{ internal_ca_base_dir }}/csr/{{ domain.name }}.csr"
-  when: not internal_ca_domain_cert.stat.exists
+    argv:
+      - openssl
+      - req
+      - -new
+      - -key
+      - "{{ internal_ca_domain_issue_key_path }}"
+      - -out
+      - "{{ internal_ca_domain_staging_csr_path }}"
+      - -config
+      - "{{ internal_ca_domain_cnf_path }}"
+  when: internal_ca_domain_needs_issue | bool
+  changed_when: true
 
-- name: Sign domain certificate with CA
+- name: Sign staged domain certificate with the CA for {{ domain.name }}
   ansible.builtin.command:
-    cmd: >
-      openssl x509 -req
-      -in {{ internal_ca_base_dir }}/csr/{{ domain.name }}.csr
-      -CA {{ internal_ca_base_dir }}/certs/ca.crt
-      -CAkey {{ internal_ca_base_dir }}/private/ca.key
-      -CAcreateserial
-      -out {{ internal_ca_base_dir }}/certs/{{ domain.name }}.crt
-      -days {{ internal_ca_cert_validity_days }}
-      -sha256
-      -extfile {{ internal_ca_base_dir }}/csr/{{ domain.name }}.cnf
-      -extensions v3_req
-    creates: "{{ internal_ca_base_dir }}/certs/{{ domain.name }}.crt"
-  when: not internal_ca_domain_cert.stat.exists
+    argv:
+      - openssl
+      - x509
+      - -req
+      - -in
+      - "{{ internal_ca_domain_staging_csr_path }}"
+      - -CA
+      - "{{ internal_ca_base_dir }}/certs/ca.crt"
+      - -CAkey
+      - "{{ internal_ca_base_dir }}/private/ca.key"
+      - -CAcreateserial
+      - -CAserial
+      - "{{ internal_ca_base_dir }}/certs/ca.srl"
+      - -out
+      - "{{ internal_ca_domain_staging_cert_path }}"
+      - -days
+      - "{{ internal_ca_cert_validity_days }}"
+      - -sha256
+      - -extfile
+      - "{{ internal_ca_domain_cnf_path }}"
+      - -extensions
+      - v3_req
+  when: internal_ca_domain_needs_issue | bool
+  changed_when: true
 
-- name: Create fullchain certificate
-  ansible.builtin.shell: |
-    cat {{ internal_ca_base_dir }}/certs/{{ domain.name }}.crt \
-        {{ internal_ca_base_dir }}/certs/ca.crt \
-        > {{ internal_ca_base_dir }}/certs/{{ domain.name }}.fullchain.crt
+- name: Assemble staged domain fullchain for {{ domain.name }}
+  ansible.builtin.shell: >-
+    cat "{{ internal_ca_domain_staging_cert_path }}"
+    "{{ internal_ca_base_dir }}/certs/ca.crt"
+    > "{{ internal_ca_domain_staging_fullchain_path }}"
   args:
     executable: /bin/bash
-    creates: "{{ internal_ca_base_dir }}/certs/{{ domain.name }}.fullchain.crt"
-  when: not internal_ca_domain_cert.stat.exists
+  when: internal_ca_domain_needs_issue | bool
+  changed_when: true
+
+- name: Verify staged domain certificate chain for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - verify
+      - -CAfile
+      - "{{ internal_ca_base_dir }}/certs/ca.crt"
+      - "{{ internal_ca_domain_staging_cert_path }}"
+  when: internal_ca_domain_needs_issue | bool
+  changed_when: false
+
+- name: Verify staged certificate and private key correspondence for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -noout
+      - -pubkey
+      - -in
+      - "{{ internal_ca_domain_staging_cert_path }}"
+  register: internal_ca_domain_staged_cert_public_key
+  when: internal_ca_domain_needs_issue | bool
+  changed_when: false
+  no_log: true
+
+- name: Read staged private key public key for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - pkey
+      - -in
+      - "{{ internal_ca_domain_issue_key_path }}"
+      - -pubout
+  register: internal_ca_domain_staged_key_public_key
+  when: internal_ca_domain_needs_issue | bool
+  changed_when: false
+  no_log: true
+
+- name: Assert staged certificate and private key match for {{ domain.name }}
+  ansible.builtin.assert:
+    that:
+      - internal_ca_domain_staged_cert_public_key.stdout == internal_ca_domain_staged_key_public_key.stdout
+    fail_msg: "Staged certificate and private key do not match for {{ domain.name }}"
+  when: internal_ca_domain_needs_issue | bool
+
+- name: Inspect staged certificate extensions for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -noout
+      - -text
+      - -in
+      - "{{ internal_ca_domain_staging_cert_path }}"
+  register: internal_ca_domain_staged_cert_inspection
+  when: internal_ca_domain_needs_issue | bool
+  changed_when: false
+
+- name: Assert required staged certificate extensions for {{ domain.name }}
+  ansible.builtin.assert:
+    that:
+      - "'CA:FALSE' in internal_ca_domain_staged_cert_inspection.stdout"
+      - "'Digital Signature' in internal_ca_domain_staged_cert_inspection.stdout"
+      - "'Key Encipherment' in internal_ca_domain_staged_cert_inspection.stdout"
+      - "'TLS Web Server Authentication' in internal_ca_domain_staged_cert_inspection.stdout"
+      - >-
+        (domain.san | default([domain.name]) | map('regex_replace', '^', 'DNS:')
+         | select('in', internal_ca_domain_staged_cert_inspection.stdout)
+         | list | length)
+        == (domain.san | default([domain.name]) | length)
+    fail_msg: "Staged certificate extensions are incomplete for {{ domain.name }}"
+  when: internal_ca_domain_needs_issue | bool
+
+- name: Set certificate backup path for {{ domain.name }}
+  ansible.builtin.set_fact:
+    internal_ca_domain_backup_path: >-
+      {{ [internal_ca_backup_dir,
+          domain.name | replace('*', 'wildcard'),
+          now(utc=true, fmt='%Y%m%dT%H%M%SZ')] | join('/') }}
+
+- name: Create certificate backup directory for {{ domain.name }}
+  ansible.builtin.file:
+    path: "{{ internal_ca_domain_backup_path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+  when:
+    - internal_ca_domain_needs_issue | bool
+    - internal_ca_domain_files.results | selectattr('stat.exists') | list | length > 0
+
+- name: Back up existing certificate files for {{ domain.name }}
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ internal_ca_domain_backup_path }}/{{ item.dest }}"
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0600"
+  loop:
+    - src: "{{ internal_ca_domain_key_path }}"
+      dest: "{{ domain.name }}.key"
+    - src: "{{ internal_ca_domain_cert_path }}"
+      dest: "{{ domain.name }}.crt"
+    - src: "{{ internal_ca_domain_fullchain_path }}"
+      dest: "{{ domain.name }}.fullchain.crt"
+  loop_control:
+    label: "{{ item.dest }}"
+  when:
+    - internal_ca_domain_needs_issue | bool
+    - (item.src == internal_ca_domain_key_path and internal_ca_domain_files.results[1].stat.exists)
+      or (item.src == internal_ca_domain_cert_path and internal_ca_domain_files.results[0].stat.exists)
+      or (item.src == internal_ca_domain_fullchain_path and internal_ca_domain_files.results[2].stat.exists)
+
+- name: Install staged domain private key for {{ domain.name }}
+  ansible.builtin.copy:
+    src: "{{ internal_ca_domain_staging_key_path }}"
+    dest: "{{ internal_ca_domain_key_path }}"
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0600"
+  when:
+    - internal_ca_domain_needs_issue | bool
+    - internal_ca_domain_new_key_needed | bool
+  no_log: true
+
+- name: Install staged domain certificate for {{ domain.name }}
+  ansible.builtin.copy:
+    src: "{{ internal_ca_domain_staging_cert_path }}"
+    dest: "{{ internal_ca_domain_cert_path }}"
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0644"
+  when: internal_ca_domain_needs_issue | bool
+
+- name: Install staged domain fullchain for {{ domain.name }}
+  ansible.builtin.copy:
+    src: "{{ internal_ca_domain_staging_fullchain_path }}"
+    dest: "{{ internal_ca_domain_fullchain_path }}"
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0644"
+  when: internal_ca_domain_needs_issue | bool
+
+- name: Remove staged certificate files for {{ domain.name }}
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ internal_ca_domain_staging_key_path }}"
+    - "{{ internal_ca_domain_staging_csr_path }}"
+    - "{{ internal_ca_domain_staging_cert_path }}"
+    - "{{ internal_ca_domain_staging_fullchain_path }}"
+  when: internal_ca_domain_needs_issue | bool
+
+- name: Ensure fullchain exists without reissuing for {{ domain.name }}
+  ansible.builtin.shell: >-
+    cat "{{ internal_ca_domain_cert_path }}"
+    "{{ internal_ca_base_dir }}/certs/ca.crt"
+    > "{{ internal_ca_domain_fullchain_path }}"
+  args:
+    executable: /bin/bash
+    creates: "{{ internal_ca_domain_fullchain_path }}"
+
+- name: Set final certificate file permissions for {{ domain.name }}
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop:
+    - path: "{{ internal_ca_domain_key_path }}"
+      mode: "0600"
+    - path: "{{ internal_ca_domain_cert_path }}"
+      mode: "0644"
+    - path: "{{ internal_ca_domain_fullchain_path }}"
+      mode: "0644"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Verify final domain certificate chain for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - verify
+      - -CAfile
+      - "{{ internal_ca_base_dir }}/certs/ca.crt"
+      - "{{ internal_ca_domain_cert_path }}"
+  changed_when: false
+
+- name: Read final certificate public key for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -noout
+      - -pubkey
+      - -in
+      - "{{ internal_ca_domain_cert_path }}"
+  register: internal_ca_domain_final_cert_public_key
+  changed_when: false
+  no_log: true
+
+- name: Read final private key public key for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - pkey
+      - -in
+      - "{{ internal_ca_domain_key_path }}"
+      - -pubout
+  register: internal_ca_domain_final_key_public_key
+  changed_when: false
+  no_log: true
+
+- name: Assert final certificate and private key match for {{ domain.name }}
+  ansible.builtin.assert:
+    that:
+      - internal_ca_domain_final_cert_public_key.stdout == internal_ca_domain_final_key_public_key.stdout
+    fail_msg: "Final certificate and private key do not match for {{ domain.name }}"
+
+- name: Check final certificate validity for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -checkend
+      - "0"
+      - -noout
+      - -in
+      - "{{ internal_ca_domain_cert_path }}"
+  changed_when: false

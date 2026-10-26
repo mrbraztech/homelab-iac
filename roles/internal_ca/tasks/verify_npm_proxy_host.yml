@@ -1,0 +1,62 @@
+---
+- name: Find NPM proxy host during verification for {{ internal_ca_npm_proxy_domain }}
+  ansible.builtin.set_fact:
+    internal_ca_npm_verify_proxy_host_matches: >-
+      {{ internal_ca_npm_verify_hosts.json
+         | selectattr('domain_names', 'contains', internal_ca_npm_proxy_domain)
+         | list }}
+
+- name: Assert NPM proxy host uniqueness during verification for {{ internal_ca_npm_proxy_domain }}
+  ansible.builtin.assert:
+    that:
+      - internal_ca_npm_verify_proxy_host_matches | length == 1
+    fail_msg: >-
+      Expected exactly one NPM proxy host containing
+      {{ internal_ca_npm_proxy_domain }}, found
+      {{ internal_ca_npm_verify_proxy_host_matches | length }}
+
+- name: Assert NPM proxy host certificate association for {{ internal_ca_npm_proxy_domain }}
+  ansible.builtin.assert:
+    that:
+      - >-
+        (internal_ca_npm_verify_proxy_host_matches | first).certificate_id | int
+        == internal_ca_npm_verify_certificate_id | int
+    fail_msg: >-
+      NPM proxy host {{ internal_ca_npm_proxy_domain }} is not associated with
+      certificate ID {{ internal_ca_npm_verify_certificate_id }}
+
+- name: Verify TLS chain and hostname for {{ internal_ca_npm_proxy_domain }}
+  ansible.builtin.shell: |
+    set -o pipefail
+    timeout 10 openssl s_client \
+      -connect {{ internal_ca_npm_endpoint_address }}:{{ internal_ca_npm_endpoint_port }} \
+      -servername "{{ internal_ca_npm_proxy_domain }}" \
+      -verify_hostname "{{ internal_ca_npm_proxy_domain }}" \
+      -verifyCAfile "{{ internal_ca_npm_verify_source_ca_path }}" \
+      -verify_return_error </dev/null >/dev/null
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: Read certificate served for {{ internal_ca_npm_proxy_domain }}
+  ansible.builtin.shell: |
+    set -o pipefail
+    timeout 10 openssl s_client \
+      -connect {{ internal_ca_npm_endpoint_address }}:{{ internal_ca_npm_endpoint_port }} \
+      -servername "{{ internal_ca_npm_proxy_domain }}" \
+      -showcerts </dev/null 2>/dev/null \
+      | openssl x509 -noout -fingerprint -sha256
+  args:
+    executable: /bin/bash
+  register: internal_ca_npm_verify_served_fingerprint_raw
+  changed_when: false
+
+- name: Assert certificate served for {{ internal_ca_npm_proxy_domain }}
+  ansible.builtin.assert:
+    that:
+      - >-
+        (internal_ca_npm_verify_served_fingerprint_raw.stdout | regex_replace('^.*=', '') | trim)
+        == (internal_ca_npm_verify_expected_fingerprint_raw.stdout | regex_replace('^.*=', '') | trim)
+    fail_msg: >-
+      NPM serves a certificate different from the IaC certificate for
+      {{ internal_ca_npm_proxy_domain }}

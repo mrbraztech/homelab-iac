@@ -1,6 +1,6 @@
 ---
-- name: Restart NPM
-  community.docker.docker_compose_v2:
-    project_src: "{{ nginx_proxy_manager_install_dir }}"
-    state: restarted
-  when: nginx_proxy_manager_install_dir is defined
+- name: Reload Nginx Proxy Manager
+  community.docker.docker_container_exec:
+    container: "{{ nginx_proxy_manager_container_name }}"
+    command: nginx -s reload
+  changed_when: true

@@ -1,0 +1,47 @@
+---
+- name: Wait for NPM API to be ready for certificate verification
+  ansible.builtin.uri:
+    url: "{{ nginx_proxy_manager_api_url }}/schema"
+    method: GET
+    status_code: 200
+  register: internal_ca_npm_verify_health
+  until: internal_ca_npm_verify_health.status == 200
+  retries: 30
+  delay: 2
+
+- name: Authenticate with NPM API for certificate verification
+  ansible.builtin.uri:
+    url: "{{ nginx_proxy_manager_api_url }}/tokens"
+    method: POST
+    body_format: json
+    body:
+      identity: "{{ nginx_proxy_manager_admin_email }}"
+      secret: "{{ nginx_proxy_manager_admin_password }}"
+    status_code: 200
+  register: internal_ca_npm_verify_auth
+  no_log: true
+
+- name: Get NPM certificate records for verification
+  ansible.builtin.uri:
+    url: "{{ nginx_proxy_manager_api_url }}/nginx/certificates"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ internal_ca_npm_verify_auth.json.token }}"
+    status_code: 200
+  register: internal_ca_npm_verify_certs
+
+- name: Get NPM proxy hosts for verification
+  ansible.builtin.uri:
+    url: "{{ nginx_proxy_manager_api_url }}/nginx/proxy-hosts"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ internal_ca_npm_verify_auth.json.token }}"
+    status_code: 200
+  register: internal_ca_npm_verify_hosts
+
+- name: Verify each managed certificate
+  ansible.builtin.include_tasks: verify_npm_certificate.yml
+  loop: "{{ internal_ca_domains }}"
+  loop_control:
+    loop_var: domain
+    label: "{{ domain.name }}"

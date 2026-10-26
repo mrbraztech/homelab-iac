@@ -1,0 +1,179 @@
+---
+- name: Set expected NPM certificate name for {{ domain.name }}
+  ansible.builtin.set_fact:
+    internal_ca_npm_verify_certificate_name: >-
+      {{ domain.npm_nice_name | default(internal_ca_organization ~ ' ' ~ domain.name) }}
+
+- name: Find NPM certificate records during verification for {{ domain.name }}
+  ansible.builtin.set_fact:
+    internal_ca_npm_verify_certificate_matches: >-
+      {{ internal_ca_npm_verify_certs.json
+         | selectattr('provider', 'equalto', 'other')
+         | selectattr('nice_name', 'defined')
+         | selectattr('nice_name', 'equalto', internal_ca_npm_verify_certificate_name)
+         | list }}
+
+- name: Assert NPM certificate registration for {{ domain.name }}
+  ansible.builtin.assert:
+    that:
+      - internal_ca_npm_verify_certificate_matches | length == 1
+    fail_msg: >-
+      Expected exactly one NPM certificate named
+      "{{ internal_ca_npm_verify_certificate_name }}", found
+      {{ internal_ca_npm_verify_certificate_matches | length }}
+
+- name: Set verified NPM certificate paths for {{ domain.name }}
+  ansible.builtin.set_fact:
+    internal_ca_npm_verify_certificate_id: >-
+      {{ (internal_ca_npm_verify_certificate_matches | first).id }}
+    internal_ca_npm_verify_certificate_dir: >-
+      {{ nginx_proxy_manager_data_path }}/custom_ssl/npm-{{ (internal_ca_npm_verify_certificate_matches | first).id }}
+    internal_ca_npm_verify_source_cert_path: "{{ internal_ca_base_dir }}/certs/{{ domain.name }}.crt"
+    internal_ca_npm_verify_source_key_path: "{{ internal_ca_base_dir }}/private/{{ domain.name }}.key"
+    internal_ca_npm_verify_source_ca_path: "{{ internal_ca_base_dir }}/certs/ca.crt"
+
+- name: Check NPM certificate files during verification for {{ domain.name }}
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop:
+    - "{{ internal_ca_npm_verify_certificate_dir }}/fullchain.pem"
+    - "{{ internal_ca_npm_verify_certificate_dir }}/privkey.pem"
+  register: internal_ca_npm_verify_files
+
+- name: Assert NPM certificate files exist for {{ domain.name }}
+  ansible.builtin.assert:
+    that:
+      - internal_ca_npm_verify_files.results | selectattr('stat.exists') | list | length == 2
+    fail_msg: "NPM certificate files are missing for {{ domain.name }}"
+
+- name: Count NPM fullchain certificates during verification for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - grep
+      - -c
+      - BEGIN CERTIFICATE
+      - "{{ internal_ca_npm_verify_certificate_dir }}/fullchain.pem"
+  register: internal_ca_npm_verify_chain_count
+  changed_when: false
+
+- name: Assert NPM fullchain is complete for {{ domain.name }}
+  ansible.builtin.assert:
+    that:
+      - internal_ca_npm_verify_chain_count.stdout | int >= 2
+    fail_msg: "NPM fullchain is incomplete for {{ domain.name }}"
+
+- name: Read expected certificate fingerprint for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -in
+      - "{{ internal_ca_npm_verify_source_cert_path }}"
+      - -noout
+      - -fingerprint
+      - -sha256
+  register: internal_ca_npm_verify_expected_fingerprint_raw
+  changed_when: false
+
+- name: Read NPM certificate fingerprint for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -in
+      - "{{ internal_ca_npm_verify_certificate_dir }}/fullchain.pem"
+      - -noout
+      - -fingerprint
+      - -sha256
+  register: internal_ca_npm_verify_npm_fingerprint_raw
+  changed_when: false
+
+- name: Read expected private key public key for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - pkey
+      - -in
+      - "{{ internal_ca_npm_verify_source_key_path }}"
+      - -pubout
+  register: internal_ca_npm_verify_expected_key_public
+  changed_when: false
+  no_log: true
+
+- name: Read NPM private key public key for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - pkey
+      - -in
+      - "{{ internal_ca_npm_verify_certificate_dir }}/privkey.pem"
+      - -pubout
+  register: internal_ca_npm_verify_npm_key_public
+  changed_when: false
+  no_log: true
+
+- name: Assert NPM certificate and private key match the IaC source for {{ domain.name }}
+  ansible.builtin.assert:
+    that:
+      - >-
+        (internal_ca_npm_verify_npm_fingerprint_raw.stdout | regex_replace('^.*=', '') | trim)
+        == (internal_ca_npm_verify_expected_fingerprint_raw.stdout | regex_replace('^.*=', '') | trim)
+      - >-
+        (internal_ca_npm_verify_npm_key_public.stdout | default(''))
+        == (internal_ca_npm_verify_expected_key_public.stdout | default(''))
+    fail_msg: "NPM certificate or private key differs from the IaC source for {{ domain.name }}"
+
+- name: Verify NPM certificate chain against the current CA for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - verify
+      - -CAfile
+      - "{{ internal_ca_npm_verify_source_ca_path }}"
+      - "{{ internal_ca_npm_verify_certificate_dir }}/fullchain.pem"
+  changed_when: false
+
+- name: Check NPM certificate validity for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -checkend
+      - "0"
+      - -noout
+      - -in
+      - "{{ internal_ca_npm_verify_certificate_dir }}/fullchain.pem"
+  changed_when: false
+
+- name: Inspect NPM certificate extensions for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -in
+      - "{{ internal_ca_npm_verify_certificate_dir }}/fullchain.pem"
+      - -noout
+      - -text
+  register: internal_ca_npm_verify_certificate_inspection
+  changed_when: false
+
+- name: Assert NPM certificate extensions for {{ domain.name }}
+  ansible.builtin.assert:
+    that:
+      - "'CA:FALSE' in internal_ca_npm_verify_certificate_inspection.stdout"
+      - "'Digital Signature' in internal_ca_npm_verify_certificate_inspection.stdout"
+      - "'Key Encipherment' in internal_ca_npm_verify_certificate_inspection.stdout"
+      - "'TLS Web Server Authentication' in internal_ca_npm_verify_certificate_inspection.stdout"
+      - >-
+        (domain.san | default([domain.name]) | map('regex_replace', '^', 'DNS:')
+         | select('in', internal_ca_npm_verify_certificate_inspection.stdout)
+         | list | length)
+        == (domain.san | default([domain.name]) | length)
+    fail_msg: "NPM certificate extensions are incomplete for {{ domain.name }}"
+
+- name: Verify managed proxy host certificates for {{ domain.name }}
+  ansible.builtin.include_tasks: verify_npm_proxy_host.yml
+  loop: "{{ domain.npm_proxy_hosts | default([]) }}"
+  loop_control:
+    loop_var: internal_ca_npm_proxy_domain
+    label: "{{ internal_ca_npm_proxy_domain }}"

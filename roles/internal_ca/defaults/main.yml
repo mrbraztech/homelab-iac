@@ -8,5 +8,12 @@ internal_ca_organization: Omni Homelab
 internal_ca_common_name: Omni Homelab Root CA
 internal_ca_validity_days: 3650
 internal_ca_cert_validity_days: 825
+internal_ca_cert_renewal_threshold_days: 30
+internal_ca_force_certificate_renewal: false
+internal_ca_rotate_certificate_keys: false
 internal_ca_key_size: 4096
+internal_ca_backup_dir: "{{ internal_ca_base_dir }}/backups"
+internal_ca_npm_verify_endpoints: true
+internal_ca_npm_endpoint_address: 127.0.0.1
+internal_ca_npm_endpoint_port: 443
 internal_ca_domains: []

@@ -2,7 +2,7 @@
 
 Ansible + OpenTofu repo managing Debian homelab CTs on Proxmox.
 
-Operational procedures live in `docs/` (`access.md`, `credentials.md`, `proxmox-rebuild.md`, `disaster-recovery.md`, `npm-proxy-hosts.md`, `nas-services.md`, `docker-daemon-config-procedure.md`).
+Operational procedures live in `docs/` (`access.md`, `credentials.md`, `proxmox-rebuild.md`, `disaster-recovery.md`, `npm-proxy-hosts.md`, `certificate-management.md`, `nas-services.md`, `docker-daemon-config-procedure.md`).
 
 ## Validate before committing
 
@@ -37,6 +37,8 @@ ansible-inventory --graph
 | `tools.yml` | tools | CyberChef, pgAdmin |
 | `ai-gateway.yml` | ai-gateway | AI gateway (9Router + Headroom) |
 | `proxy.yml` | proxy | Nginx Proxy Manager, internal CA |
+| `certificates.yml` | proxy | Internal CA certificate lifecycle only |
+| `verify-certificates.yml` | proxy | Read-only TLS certificate verification |
 | `dns.yml` | dns | Pi-hole + Unbound |
 | `network.yml` | network | Network controller (Omada) |
 | `site.yml` | site | Frigate NVR |

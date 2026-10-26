@@ -1,0 +1,15 @@
+---
+- name: Manage internal CA certificates in Nginx Proxy Manager
+  hosts: proxy
+  become: true
+  gather_facts: true
+
+  vars:
+    nginx_proxy_manager_api_url: "http://localhost:81/api"
+    nginx_proxy_manager_data_path: /opt/npm/data
+    nginx_proxy_manager_container_name: npm
+
+  tasks:
+    - name: Apply internal CA certificate lifecycle
+      ansible.builtin.include_role:
+        name: internal_ca

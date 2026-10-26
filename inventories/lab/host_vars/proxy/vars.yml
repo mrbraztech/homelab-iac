@@ -6,6 +6,35 @@ nginx_proxy_manager_configure_proxy_hosts: true
 internal_ca_domains:
   - name: "*.omni.corp"
     common_name: "*.omni.corp"
+    npm_nice_name: "Omni Homelab Wildcard"
     san:
       - "*.omni.corp"
       - "omni.corp"
+    npm_proxy_hosts:
+      - chef.omni.corp
+      - containers.omni.corp
+      - dns.omni.corp
+      - nas.omni.corp
+      - proxy.omni.corp
+      - site.omni.corp
+      - monitor.omni.corp
+      - cloud.omni.corp
+      - docs.omni.corp
+      - media.omni.corp
+      - switch.omni.corp
+      - database.omni.corp
+      - network.omni.corp
+      - ai-gateway.omni.corp
+      - agent.omni.corp
+      - vault.omni.corp
+      - printers.omni.corp
+  - name: "*.hearthlane.omni.corp"
+    common_name: "*.hearthlane.omni.corp"
+    npm_nice_name: "Omni Homelab Hearthlane Wildcard"
+    san:
+      - "*.hearthlane.omni.corp"
+      - "hearthlane.omni.corp"
+    npm_proxy_hosts:
+      - frigate.hearthlane.omni.corp
+      - relay.hearthlane.omni.corp
+      - relay-uat.hearthlane.omni.corp

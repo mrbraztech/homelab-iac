@@ -6,5 +6,5 @@
   roles:
     - bootstrap
     - docker
-    - internal_ca
     - nginx_proxy_manager
+    - internal_ca

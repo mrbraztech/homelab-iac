@@ -1,0 +1,359 @@
+---
+- name: Set NPM certificate name for {{ domain.name }}
+  ansible.builtin.set_fact:
+    internal_ca_npm_certificate_name: >-
+      {{ domain.npm_nice_name | default(internal_ca_organization ~ ' ' ~ domain.name) }}
+
+- name: Find NPM certificate records for {{ domain.name }}
+  ansible.builtin.set_fact:
+    internal_ca_npm_certificate_matches: >-
+      {{ internal_ca_npm_certs.json
+         | selectattr('provider', 'equalto', 'other')
+         | selectattr('nice_name', 'defined')
+         | selectattr('nice_name', 'equalto', internal_ca_npm_certificate_name)
+         | list }}
+
+- name: Set source certificate paths for {{ domain.name }}
+  ansible.builtin.set_fact:
+    internal_ca_npm_source_cert_path: "{{ internal_ca_base_dir }}/certs/{{ domain.name }}.crt"
+    internal_ca_npm_source_key_path: "{{ internal_ca_base_dir }}/private/{{ domain.name }}.key"
+    internal_ca_npm_source_ca_path: "{{ internal_ca_base_dir }}/certs/ca.crt"
+
+- name: Validate managed proxy hosts against certificate SAN for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -in
+      - "{{ internal_ca_npm_source_cert_path }}"
+      - -noout
+      - -checkhost
+      - "{{ item }}"
+  loop: "{{ domain.npm_proxy_hosts | default([]) }}"
+  register: internal_ca_npm_san_checks
+  changed_when: false
+  failed_when: false
+
+- name: Assert managed proxy hosts are covered by certificate SAN for {{ domain.name }}
+  ansible.builtin.assert:
+    that:
+      - internal_ca_npm_san_checks.results | rejectattr('rc', 'equalto', 0) | list | length == 0
+    fail_msg: >-
+      Certificate {{ domain.name }} does not cover:
+      {{ internal_ca_npm_san_checks.results | rejectattr('rc', 'equalto', 0)
+         | map(attribute='item') | join(', ') }}
+  when: domain.npm_proxy_hosts | default([]) | length > 0
+
+- name: Assert managed proxy hosts exist for {{ domain.name }}
+  ansible.builtin.assert:
+    that:
+      - >-
+        internal_ca_npm_existing_hosts.json
+        | selectattr('domain_names', 'contains', internal_ca_npm_proxy_domain)
+        | list | length == 1
+    fail_msg: >-
+      Expected exactly one NPM proxy host containing
+      {{ internal_ca_npm_proxy_domain }}
+  loop: "{{ domain.npm_proxy_hosts | default([]) }}"
+  loop_control:
+    loop_var: internal_ca_npm_proxy_domain
+    label: "{{ internal_ca_npm_proxy_domain }}"
+
+- name: Assert NPM certificate name is unique for {{ domain.name }}
+  ansible.builtin.assert:
+    that:
+      - internal_ca_npm_certificate_matches | length <= 1
+    fail_msg: >-
+      More than one NPM certificate record matches the exact name
+      "{{ internal_ca_npm_certificate_name }}"
+
+- name: Create NPM certificate record for {{ domain.name }}
+  ansible.builtin.uri:
+    url: "{{ nginx_proxy_manager_api_url }}/nginx/certificates"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ internal_ca_npm_auth.json.token }}"
+    body_format: json
+    body:
+      provider: other
+      nice_name: "{{ internal_ca_npm_certificate_name }}"
+      domain_names: "{{ domain.san | default([domain.name]) }}"
+    status_code: 201
+  register: internal_ca_npm_certificate_create
+  changed_when: true
+  when: internal_ca_npm_certificate_matches | length == 0
+
+- name: Record NPM certificate ID for {{ domain.name }}
+  ansible.builtin.set_fact:
+    internal_ca_npm_certificate_id: >-
+      {{ (internal_ca_npm_certificate_matches | first).id
+         if internal_ca_npm_certificate_matches | length == 1
+         else internal_ca_npm_certificate_create.json.id }}
+    internal_ca_npm_certificate_created: >-
+      {{ internal_ca_npm_certificate_matches | length == 0 }}
+    internal_ca_npm_certificate_dir: >-
+      {{ nginx_proxy_manager_data_path }}/custom_ssl/npm-{{ (internal_ca_npm_certificate_matches | first).id
+         if internal_ca_npm_certificate_matches | length == 1
+         else internal_ca_npm_certificate_create.json.id }}
+
+- name: Check current NPM certificate files for {{ domain.name }}
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop:
+    - "{{ internal_ca_npm_certificate_dir }}/fullchain.pem"
+    - "{{ internal_ca_npm_certificate_dir }}/privkey.pem"
+  register: internal_ca_npm_current_files
+
+- name: Read desired NPM certificate fingerprint for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -in
+      - "{{ internal_ca_npm_source_cert_path }}"
+      - -noout
+      - -fingerprint
+      - -sha256
+  register: internal_ca_npm_desired_fingerprint_raw
+  changed_when: false
+
+- name: Read current NPM certificate fingerprint for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -in
+      - "{{ internal_ca_npm_certificate_dir }}/fullchain.pem"
+      - -noout
+      - -fingerprint
+      - -sha256
+  register: internal_ca_npm_current_fingerprint_raw
+  changed_when: false
+  failed_when: false
+  when: internal_ca_npm_current_files.results[0].stat.exists
+
+- name: Count current NPM fullchain certificates for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - grep
+      - -c
+      - BEGIN CERTIFICATE
+      - "{{ internal_ca_npm_certificate_dir }}/fullchain.pem"
+  register: internal_ca_npm_current_chain_count
+  changed_when: false
+  failed_when: false
+  when: internal_ca_npm_current_files.results[0].stat.exists
+
+- name: Read desired NPM certificate public key for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - pkey
+      - -in
+      - "{{ internal_ca_npm_source_key_path }}"
+      - -pubout
+  register: internal_ca_npm_desired_key_public
+  changed_when: false
+  no_log: true
+
+- name: Read current NPM certificate public key for {{ domain.name }}
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - pkey
+      - -in
+      - "{{ internal_ca_npm_certificate_dir }}/privkey.pem"
+      - -pubout
+  register: internal_ca_npm_current_key_public
+  changed_when: false
+  failed_when: false
+  no_log: true
+  when: internal_ca_npm_current_files.results[1].stat.exists
+
+- name: Determine whether NPM certificate upload is required for {{ domain.name }}
+  ansible.builtin.set_fact:
+    internal_ca_npm_desired_fingerprint: >-
+      {{ internal_ca_npm_desired_fingerprint_raw.stdout | regex_replace('^.*=', '') | trim }}
+    internal_ca_npm_upload_required: >-
+      {{ not (internal_ca_npm_current_files.results[0].stat.exists
+              and internal_ca_npm_current_files.results[1].stat.exists
+              and (internal_ca_npm_current_chain_count.stdout | default('0') | int) >= 2
+              and (internal_ca_npm_current_fingerprint_raw.stdout | default('') | regex_replace('^.*=', '') | trim)
+                  == (internal_ca_npm_desired_fingerprint_raw.stdout | regex_replace('^.*=', '') | trim)
+              and (internal_ca_npm_current_key_public.stdout | default(''))
+                  == (internal_ca_npm_desired_key_public.stdout | default(''))) }}
+
+- name: Set NPM certificate backup path for {{ domain.name }}
+  ansible.builtin.set_fact:
+    internal_ca_npm_backup_path: >-
+      {{ [nginx_proxy_manager_data_path, 'custom_ssl', 'backups',
+          'npm-' ~ internal_ca_npm_certificate_id,
+          now(utc=true, fmt='%Y%m%dT%H%M%SZ')] | join('/') }}
+    internal_ca_npm_backup_available: false
+
+- name: Create NPM certificate backup directory for {{ domain.name }}
+  ansible.builtin.file:
+    path: "{{ internal_ca_npm_backup_path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+  when:
+    - internal_ca_npm_upload_required | bool
+    - internal_ca_npm_current_files.results | selectattr('stat.exists') | list | length > 0
+
+- name: Back up current NPM certificate files for {{ domain.name }}
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ internal_ca_npm_backup_path }}/{{ item | basename }}"
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0600"
+  loop:
+    - "{{ internal_ca_npm_certificate_dir }}/fullchain.pem"
+    - "{{ internal_ca_npm_certificate_dir }}/privkey.pem"
+  loop_control:
+    label: "{{ item | basename }}"
+  when:
+    - internal_ca_npm_upload_required | bool
+    - >-
+      (item == internal_ca_npm_certificate_dir ~ '/fullchain.pem'
+       and internal_ca_npm_current_files.results[0].stat.exists)
+      or (item == internal_ca_npm_certificate_dir ~ '/privkey.pem'
+          and internal_ca_npm_current_files.results[1].stat.exists)
+
+- name: Record NPM certificate backup availability for {{ domain.name }}
+  ansible.builtin.set_fact:
+    internal_ca_npm_backup_available: >-
+      {{ internal_ca_npm_upload_required | bool
+         and (internal_ca_npm_current_files.results | selectattr('stat.exists') | list | length > 0) }}
+
+- name: Read generated leaf certificate for NPM upload
+  ansible.builtin.slurp:
+    src: "{{ internal_ca_npm_source_cert_path }}"
+  register: internal_ca_npm_source_cert
+  when: internal_ca_npm_upload_required | bool
+
+- name: Read CA certificate for NPM upload
+  ansible.builtin.slurp:
+    src: "{{ internal_ca_npm_source_ca_path }}"
+  register: internal_ca_npm_source_ca
+  when: internal_ca_npm_upload_required | bool
+
+- name: Read private key for NPM upload
+  ansible.builtin.slurp:
+    src: "{{ internal_ca_npm_source_key_path }}"
+  register: internal_ca_npm_source_key
+  no_log: true
+  when: internal_ca_npm_upload_required | bool
+
+- name: Upload internal CA certificate to NPM for {{ domain.name }}
+  block:
+    - name: Upload certificate, key, and CA chain to NPM for {{ domain.name }}
+      ansible.builtin.uri:
+        url: "{{ nginx_proxy_manager_api_url }}/nginx/certificates/{{ internal_ca_npm_certificate_id }}/upload"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ internal_ca_npm_auth.json.token }}"
+        body_format: form-multipart
+        body:
+          certificate:
+            content: "{{ internal_ca_npm_source_cert.content | b64decode }}"
+            filename: certificate.pem
+            mime_type: application/x-pem-file
+          certificate_key:
+            content: "{{ internal_ca_npm_source_key.content | b64decode }}"
+            filename: private.key
+            mime_type: application/x-pem-file
+          intermediate_certificate:
+            content: "{{ internal_ca_npm_source_ca.content | b64decode }}"
+            filename: intermediate.pem
+            mime_type: application/x-pem-file
+        status_code: 200
+      no_log: true
+      changed_when: true
+      notify: Reload Nginx Proxy Manager
+      when: internal_ca_npm_upload_required | bool
+
+    - name: Read uploaded NPM certificate fingerprint for {{ domain.name }}
+      ansible.builtin.command:
+        argv:
+          - openssl
+          - x509
+          - -in
+          - "{{ internal_ca_npm_certificate_dir }}/fullchain.pem"
+          - -noout
+          - -fingerprint
+          - -sha256
+      register: internal_ca_npm_uploaded_fingerprint_raw
+      changed_when: false
+      when: internal_ca_npm_upload_required | bool
+
+    - name: Read uploaded NPM private key public key for {{ domain.name }}
+      ansible.builtin.command:
+        argv:
+          - openssl
+          - pkey
+          - -in
+          - "{{ internal_ca_npm_certificate_dir }}/privkey.pem"
+          - -pubout
+      register: internal_ca_npm_uploaded_key_public
+      changed_when: false
+      no_log: true
+      when: internal_ca_npm_upload_required | bool
+
+    - name: Verify uploaded NPM certificate matches the IaC certificate for {{ domain.name }}
+      ansible.builtin.assert:
+        that:
+          - >-
+            (internal_ca_npm_uploaded_fingerprint_raw.stdout | regex_replace('^.*=', '') | trim)
+            == internal_ca_npm_desired_fingerprint
+          - >-
+            (internal_ca_npm_uploaded_key_public.stdout | default(''))
+            == (internal_ca_npm_desired_key_public.stdout | default(''))
+        fail_msg: "NPM stored a certificate or key that differs from the IaC source for {{ domain.name }}"
+      when: internal_ca_npm_upload_required | bool
+  rescue:
+    - name: Restore previous NPM certificate files for {{ domain.name }}
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: "{{ internal_ca_npm_certificate_dir }}/{{ item | basename }}"
+        remote_src: true
+        owner: root
+        group: root
+        mode: "0600"
+      loop:
+        - "{{ internal_ca_npm_backup_path }}/fullchain.pem"
+        - "{{ internal_ca_npm_backup_path }}/privkey.pem"
+      loop_control:
+        label: "{{ item | basename }}"
+      when: internal_ca_npm_backup_available | bool
+
+    - name: Reload NPM after certificate rollback for {{ domain.name }}
+      community.docker.docker_container_exec:
+        container: "{{ nginx_proxy_manager_container_name }}"
+        command: nginx -s reload
+      changed_when: true
+      when: internal_ca_npm_backup_available | bool
+
+    - name: Remove newly created NPM certificate record after failure for {{ domain.name }}
+      ansible.builtin.uri:
+        url: "{{ nginx_proxy_manager_api_url }}/nginx/certificates/{{ internal_ca_npm_certificate_id }}"
+        method: DELETE
+        headers:
+          Authorization: "Bearer {{ internal_ca_npm_auth.json.token }}"
+        status_code: 200
+      changed_when: true
+      when: internal_ca_npm_certificate_created | bool
+
+    - name: Fail after NPM certificate upload rollback for {{ domain.name }}
+      ansible.builtin.fail:
+        msg: "NPM certificate upload failed and was rolled back for {{ domain.name }}"
+
+- name: Associate managed proxy hosts with certificate for {{ domain.name }}
+  ansible.builtin.include_tasks: associate_npm_certificate.yml
+  loop: "{{ domain.npm_proxy_hosts | default([]) }}"
+  loop_control:
+    loop_var: internal_ca_npm_proxy_domain
+    label: "{{ internal_ca_npm_proxy_domain }}"
