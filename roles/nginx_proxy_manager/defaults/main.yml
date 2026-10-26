@@ -163,7 +163,7 @@ nginx_proxy_manager_default_proxy_hosts:
     forward_port: 80
     ssl_enabled: true
     http2_support: true
-    ssl_forced: false
+    ssl_forced: true
 
   - domain_names:
       - relay.hearthlane.omni.corp
