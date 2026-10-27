@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+# {{ ansible_managed }}
+set -euo pipefail
+
+PCT_BIN="${PCT_BIN:-/usr/sbin/pct}"
+LVS_BIN="${LVS_BIN:-/usr/sbin/lvs}"
+DMSETUP_BIN="${DMSETUP_BIN:-/usr/sbin/dmsetup}"
+TIMEOUT_BIN="${TIMEOUT_BIN:-/usr/bin/timeout}"
+LOGGER_BIN="${LOGGER_BIN:-/usr/bin/logger}"
+FLOCK_BIN="${FLOCK_BIN:-/usr/bin/flock}"
+TRIM_LOCK_FILE="${TRIM_LOCK_FILE:-{{ proxmox_storage_trim_lock_file }}}"
+BACKUP_LOCK_FILE="${BACKUP_LOCK_FILE:-{{ proxmox_storage_backup_lock_file }}}"
+LOCAL_STORAGE="${LOCAL_STORAGE:-{{ proxmox_storage_local_storage }}}"
+THIN_POOL="${THIN_POOL:-{{ proxmox_storage_thin_pool }}}"
+THIN_POOL_DM="${THIN_POOL_DM:-{{ proxmox_storage_thin_pool_dm }}}"
+TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-{{ proxmox_storage_trim_timeout_seconds }}}"
+LOG_TAG="proxmox-lxc-fstrim"
+
+log() {
+    printf '%s\n' "$*"
+    "${LOGGER_BIN}" -t "${LOG_TAG}" "$*" 2>/dev/null || true
+}
+
+data_blocks() {
+    "${DMSETUP_BIN}" status "${THIN_POOL_DM}" | awk '{print $7}' | cut -d/ -f1
+}
+
+usage() {
+    "${LVS_BIN}" --noheadings -o data_percent,metadata_percent "${THIN_POOL}" 2>/dev/null |
+        tr -s ' ' | sed 's/^ //' || true
+}
+
+if [[ "${PROXMOX_STORAGE_TRIM_LOCKED:-0}" != "1" ]]; then
+    if "${FLOCK_BIN}" --close --nonblock --conflict-exit-code 75 "${TRIM_LOCK_FILE}" \
+        env PROXMOX_STORAGE_TRIM_LOCKED=1 "$0" "$@"; then
+        rc=0
+    else
+        rc=$?
+    fi
+    if [[ ${rc} -eq 75 ]]; then
+        log "another TRIM operation is already running; skipping"
+        exit 0
+    fi
+    exit "${rc}"
+fi
+
+if [[ "${PROXMOX_STORAGE_BACKUP_LOCKED:-0}" != "1" ]]; then
+    if "${FLOCK_BIN}" --close --nonblock --conflict-exit-code 75 "${BACKUP_LOCK_FILE}" \
+        env PROXMOX_STORAGE_TRIM_LOCKED=1 PROXMOX_STORAGE_BACKUP_LOCKED=1 "$0" "$@"; then
+        rc=0
+    else
+        rc=$?
+    fi
+    if [[ ${rc} -eq 75 ]]; then
+        log "Proxmox backup is running; skipping TRIM to avoid overlap"
+        exit 0
+    fi
+    exit "${rc}"
+fi
+
+mapfile -t vms < <("${PCT_BIN}" list | awk 'NR > 1 && $2 == "running" {print $1}')
+vms_count=0
+for _vmid in "${vms[@]}"; do
+    vms_count=$((vms_count + 1))
+done
+if [[ ${vms_count} -eq 0 ]]; then
+    log "no running containers found; nothing to trim"
+    exit 0
+fi
+
+pool_before=$(data_blocks)
+failures=0
+
+for vmid in "${vms[@]}"; do
+    rootfs=$("${PCT_BIN}" config "${vmid}" | awk -F': ' '/^rootfs:/ {print $2; exit}')
+    if [[ "${rootfs}" != *"${LOCAL_STORAGE}:"* ]]; then
+        log "CT ${vmid}: rootfs is not on ${LOCAL_STORAGE}; skipping"
+        continue
+    fi
+
+    ct_before=$(data_blocks)
+    if output=$("${TIMEOUT_BIN}" "${TIMEOUT_SECONDS}" "${PCT_BIN}" fstrim "${vmid}" --ignore-mountpoints 2>&1); then
+        rc=0
+    else
+        rc=$?
+    fi
+    ct_after=$(data_blocks)
+
+    reclaimed_blocks=$((ct_before - ct_after))
+    reclaimed_mib=$((reclaimed_blocks * 64 / 1024))
+    output=${output//$'\n'/ | }
+    log "CT ${vmid}: rc=${rc} reclaimed=${reclaimed_mib}MiB output=${output}"
+
+    if [[ ${rc} -ne 0 ]]; then
+        failures=$((failures + 1))
+    fi
+done
+
+pool_after=$(data_blocks)
+total_blocks=$((pool_before - pool_after))
+total_mib=$((total_blocks * 64 / 1024))
+log "summary: containers=${vms_count} failures=${failures} reclaimed=${total_mib}MiB usage=$(usage)"
+
+if [[ ${failures} -ne 0 ]]; then
+    exit 1
+fi

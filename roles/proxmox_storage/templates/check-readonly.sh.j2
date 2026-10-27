@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# {{ ansible_managed }}
+set -euo pipefail
+
+CONFIG_FILE="${PROXMOX_STORAGE_NOTIFY_CONFIG:-{{ proxmox_storage_notify_config }}}"
+# shellcheck source=/dev/null
+source "${CONFIG_FILE}"
+
+LVS_BIN="${LVS_BIN:-/usr/sbin/lvs}"
+LOGGER_BIN="${LOGGER_BIN:-/usr/bin/logger}"
+FLOCK_BIN="${FLOCK_BIN:-/usr/bin/flock}"
+STATE_FILE="${STATE_FILE:-{{ proxmox_storage_state_dir }}/readonly.state}"
+LOCK_FILE="${LOCK_FILE:-{{ proxmox_storage_readonly_lock_file }}}"
+NOTIFY_BIN="${NOTIFY_BIN:-{{ proxmox_storage_notify_script }}}"
+LOG_TAG="proxmox-storage-readonly"
+
+log() {
+    printf '%s\n' "$*"
+    "${LOGGER_BIN}" -t "${LOG_TAG}" "$*" 2>/dev/null || true
+}
+
+if [[ "${PROXMOX_STORAGE_READONLY_LOCKED:-0}" != "1" ]]; then
+    if "${FLOCK_BIN}" --close --nonblock --conflict-exit-code 75 "${LOCK_FILE}" \
+        env PROXMOX_STORAGE_READONLY_LOCKED=1 "$0" "$@"; then
+        rc=0
+    else
+        rc=$?
+    fi
+    if [[ ${rc} -eq 75 ]]; then
+        log "read-only check is already running; skipping"
+        exit 0
+    fi
+    exit "${rc}"
+fi
+
+if ! read -r attr data meta < <("${LVS_BIN}" --noheadings -o lv_attr,data_percent,metadata_percent "${THIN_POOL}" | awk 'NR == 1 {print $1, $2, $3}'); then
+    log "failed to read LVM thin pool state for ${THIN_POOL}"
+    exit 1
+fi
+
+if [[ -z "${attr:-}" ]]; then
+    log "empty LVM thin pool state for ${THIN_POOL}"
+    exit 1
+fi
+
+is_readonly=0
+if [[ "${attr:1:1}" == "r" ]]; then
+    is_readonly=1
+fi
+
+previous=$(cat "${STATE_FILE}" 2>/dev/null || printf 'ok')
+
+if [[ ${is_readonly} -eq 1 && "${previous}" != "readonly" ]]; then
+    if "${NOTIFY_BIN}" "${ALERT_EMAIL}" "CRITICAL" \
+        "${PVE_STORAGE_NAME} thin pool is read-only" \
+        "Thin pool ${THIN_POOL} is read-only (attr=${attr}, data=${data}%, metadata=${meta}%)." \
+        "${data}%" "$(hostname -s)"; then
+        printf 'readonly\n' > "${STATE_FILE}"
+        log "detected read-only thin pool and sent alert"
+    else
+        log "detected read-only thin pool but failed to send alert"
+        exit 1
+    fi
+elif [[ ${is_readonly} -eq 0 && "${previous}" == "readonly" ]]; then
+    if "${NOTIFY_BIN}" "${ALERT_EMAIL}" "CLEAR" \
+        "${PVE_STORAGE_NAME} thin pool is writable again" \
+        "Thin pool ${THIN_POOL} is writable (attr=${attr}, data=${data}%, metadata=${meta}%)." \
+        "${data}%" "$(hostname -s)"; then
+        printf 'ok\n' > "${STATE_FILE}"
+        log "thin pool is writable again and recovery alert sent"
+    else
+        log "thin pool recovered but failed to send recovery alert"
+        exit 1
+    fi
+fi

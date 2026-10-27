@@ -1,0 +1,12 @@
+[Unit]
+Description=Weekly TRIM for running LXC root filesystems
+
+[Timer]
+OnCalendar={{ proxmox_storage_trim_schedule }}
+RandomizedDelaySec={{ proxmox_storage_trim_randomized_delay }}
+AccuracySec=1m
+Persistent=false
+Unit=proxmox-lxc-fstrim.service
+
+[Install]
+WantedBy=timers.target

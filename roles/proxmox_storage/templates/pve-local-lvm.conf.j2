@@ -1,0 +1,61 @@
+# {{ ansible_managed }}
+# Overrides the stock Netdata LVM templates with local-lvm thresholds and
+# routes notifications through the pve_storage role.
+
+    template: lvm_lv_data_space_utilization
+          on: lvm.lv_data_space_utilization
+       class: Utilization
+        type: System
+   component: LVM
+        calc: $utilization
+       units: %
+       every: 1m
+        warn: $this >= {{ proxmox_storage_data_warning }}
+        crit: $this >= {{ proxmox_storage_data_critical }}
+       delay: down 15m multiplier 1.5 max 1h
+     summary: local-lvm thin pool data utilization on ${label:vg_name}/${label:lv_name}
+        info: Data utilization for thin pool ${label:vg_name}/${label:lv_name} (${label:volume_type})
+          to: {{ proxmox_storage_alert_role }}
+
+    template: lvm_lv_metadata_space_utilization
+          on: lvm.lv_metadata_space_utilization
+       class: Utilization
+        type: System
+   component: LVM
+        calc: $utilization
+       units: %
+       every: 1m
+        warn: $this >= {{ proxmox_storage_metadata_warning }}
+        crit: $this >= {{ proxmox_storage_metadata_critical }}
+       delay: down 15m multiplier 1.5 max 1h
+     summary: local-lvm thin pool metadata utilization on ${label:vg_name}/${label:lv_name}
+        info: Metadata utilization for thin pool ${label:vg_name}/${label:lv_name} (${label:volume_type})
+          to: {{ proxmox_storage_alert_role }}
+
+    template: lvm_lv_data_full
+          on: lvm.lv_data_space_utilization
+       class: Utilization
+        type: System
+   component: LVM
+        calc: $utilization
+       units: %
+       every: 1m
+        crit: $this >= {{ proxmox_storage_full_threshold }}
+       delay: down 5m multiplier 1.5 max 1h
+     summary: local-lvm thin pool data is full on ${label:vg_name}/${label:lv_name}
+        info: Data utilization for thin pool ${label:vg_name}/${label:lv_name} (${label:volume_type})
+          to: {{ proxmox_storage_alert_role }}
+
+    template: lvm_lv_metadata_full
+          on: lvm.lv_metadata_space_utilization
+       class: Utilization
+        type: System
+   component: LVM
+        calc: $utilization
+       units: %
+       every: 1m
+        crit: $this >= {{ proxmox_storage_full_threshold }}
+       delay: down 5m multiplier 1.5 max 1h
+     summary: local-lvm thin pool metadata is full on ${label:vg_name}/${label:lv_name}
+        info: Metadata utilization for thin pool ${label:vg_name}/${label:lv_name} (${label:volume_type})
+          to: {{ proxmox_storage_alert_role }}

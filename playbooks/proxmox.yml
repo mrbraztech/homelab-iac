@@ -8,6 +8,7 @@
       vars:
         netdata_role: parent
         netdata_memory_mode: dbengine
+    - proxmox_storage
 
   tasks:
     - name: Check if GPU passthrough is configured for site CT

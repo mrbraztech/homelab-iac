@@ -1,0 +1,11 @@
+[Unit]
+Description=Periodic local-lvm thin pool read-only check
+
+[Timer]
+OnCalendar={{ proxmox_storage_readonly_schedule }}
+AccuracySec=1m
+Persistent=false
+Unit=proxmox-storage-readonly.service
+
+[Install]
+WantedBy=timers.target

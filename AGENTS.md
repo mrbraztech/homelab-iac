@@ -2,7 +2,7 @@
 
 Ansible + OpenTofu repo managing Debian homelab CTs on Proxmox.
 
-Operational procedures live in `docs/` (`access.md`, `credentials.md`, `proxmox-rebuild.md`, `disaster-recovery.md`, `npm-proxy-hosts.md`, `certificate-management.md`, `nas-services.md`, `docker-daemon-config-procedure.md`).
+Operational procedures live in `docs/` (`access.md`, `credentials.md`, `proxmox-rebuild.md`, `disaster-recovery.md`, `npm-proxy-hosts.md`, `certificate-management.md`, `storage-maintenance.md`, `nas-services.md`, `docker-daemon-config-procedure.md`).
 
 ## Validate before committing
 

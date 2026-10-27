@@ -1,0 +1,9 @@
+[Unit]
+Description=Check local-lvm thin pool read-only state
+After=local-fs.target
+ConditionPathExists=/usr/sbin/lvs
+
+[Service]
+Type=oneshot
+ExecStart={{ proxmox_storage_readonly_script }}
+Nice=10

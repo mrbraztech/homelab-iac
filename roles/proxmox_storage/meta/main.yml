@@ -1,0 +1,10 @@
+---
+galaxy_info:
+  author: braz
+  description: Proxmox storage maintenance and thin-pool monitoring
+  license: MIT
+  min_ansible_version: "2.17"
+  platforms:
+    - name: Debian
+      versions:
+        - trixie

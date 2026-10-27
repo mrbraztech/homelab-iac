@@ -1,0 +1,24 @@
+# {{ ansible_managed }}
+# Netdata custom notification hook for local-lvm storage alarms.
+# The stock alarm-notify configuration is sourced first; this file only
+# overrides the custom notification method and the pve_storage role.
+
+SEND_CUSTOM="YES"
+DEFAULT_RECIPIENT_CUSTOM="{{ proxmox_storage_alert_email_resolved }}"
+role_recipients_custom[{{ proxmox_storage_alert_role }}]="${DEFAULT_RECIPIENT_CUSTOM}"
+
+custom_sender() {
+    local to="${1:-}"
+    local recipient
+
+    for recipient in ${to//,/ }; do
+        [[ -z "${recipient}" ]] && continue
+        {{ proxmox_storage_notify_script }} \
+            "${recipient}" \
+            "${status}" \
+            "${summary}" \
+            "${info}" \
+            "${value_string}" \
+            "${host}" || true
+    done
+}

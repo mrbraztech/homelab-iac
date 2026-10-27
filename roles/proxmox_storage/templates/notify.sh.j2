@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# {{ ansible_managed }}
+set -euo pipefail
+
+CONFIG_FILE="${PROXMOX_STORAGE_NOTIFY_CONFIG:-{{ proxmox_storage_notify_config }}}"
+# shellcheck source=/dev/null
+source "${CONFIG_FILE}"
+
+recipient="${1:?recipient is required}"
+status="${2:-UNKNOWN}"
+summary="${3:-Proxmox storage alert}"
+info="${4:-}"
+value="${5:-}"
+host="${6:-$(hostname -s)}"
+curl_bin="${CURL_BIN:-/usr/bin/curl}"
+
+if [[ -z "${recipient}" || -z "${ALERT_EMAIL}" ]]; then
+    printf 'No recipient configured for Proxmox storage notification\n' >&2
+    exit 1
+fi
+
+storage_state=$("${PVESM_BIN}" status 2>/dev/null | awk -v storage="${PVE_STORAGE_NAME}" '
+    $1 == storage {
+        printf "%s: total=%s KiB used=%s KiB available=%s KiB (%s%%)\n", $1, $4, $5, $6, $7
+    }
+' || true)
+lvm_state=$("${LVS_BIN}" --noheadings -o lv_name,data_percent,metadata_percent "${THIN_POOL}" 2>/dev/null |
+    sed 's/^[[:space:]]*//' || true)
+
+[[ -n "${storage_state}" ]] || storage_state="${PVE_STORAGE_NAME}: unavailable"
+[[ -n "${lvm_state}" ]] || lvm_state="${THIN_POOL}: unavailable"
+
+subject="[pve-storage][${status}] ${summary}"
+subject="$(printf '%s' "${subject}" | tr -d '\r\n')"
+body=$(printf '%s\n\nHost: %s\nStatus: %s\nSummary: %s\nInfo: %s\nValue: %s\n\nStorage:\n%s\n\nLVM:\n%s\n' \
+    "Automated Proxmox local-lvm maintenance alert" \
+    "${host}" "${status}" "${summary}" "${info}" "${value}" "${storage_state}" "${lvm_state}")
+
+if [[ "${DRY_RUN:-0}" == "1" ]]; then
+    printf 'To: %s\nSubject: %s\n\n%s\n' "${recipient}" "${subject}" "${body}"
+    exit 0
+fi
+
+if ! printf 'From: %s\nTo: %s\nSubject: %s\nDate: %s\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\n\n%s\n' \
+    "${MAIL_FROM}" "${recipient}" "${subject}" "$(date -R)" "${body}" |
+    "${curl_bin}" --silent --show-error \
+        --url "smtp://${SMTP_RELAY}:${SMTP_PORT}" \
+        --mail-from "${MAIL_FROM}" \
+        --mail-rcpt "${recipient}" \
+        --upload-file -; then
+    logger -t proxmox-storage-notify "failed to send ${status} alert to ${recipient}" 2>/dev/null || true
+    exit 1
+fi
+
+logger -t proxmox-storage-notify "sent ${status} alert to ${recipient}" 2>/dev/null || true

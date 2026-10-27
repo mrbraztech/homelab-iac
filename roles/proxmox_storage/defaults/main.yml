@@ -1,0 +1,33 @@
+---
+proxmox_storage_trim_enabled: true
+proxmox_storage_trim_schedule: "Sun *-*-* 05:00:00"
+proxmox_storage_trim_randomized_delay: "5m"
+proxmox_storage_trim_timeout_seconds: 300
+proxmox_storage_trim_lock_file: /run/lock/proxmox-lxc-fstrim.lock
+proxmox_storage_backup_lock_file: /run/vzdump.lock
+proxmox_storage_local_storage: local-lvm
+proxmox_storage_thin_pool: pve/data
+proxmox_storage_thin_pool_dm: pve-data-tpool
+proxmox_storage_monitoring_enabled: true
+proxmox_storage_alert_email: ""
+proxmox_storage_alert_role: pve_storage
+proxmox_storage_mail_relay: 192.168.10.5
+proxmox_storage_mail_port: 25
+proxmox_storage_mail_from: proxmox-storage@pve.lan
+proxmox_storage_data_warning: 80
+proxmox_storage_data_critical: 90
+proxmox_storage_metadata_warning: 80
+proxmox_storage_metadata_critical: 90
+proxmox_storage_full_threshold: 99.5
+proxmox_storage_readonly_schedule: "*:0/5"
+proxmox_storage_readonly_lock_file: /run/lock/proxmox-storage-readonly.lock
+proxmox_storage_state_dir: /var/lib/proxmox-storage
+proxmox_storage_script_dir: /usr/local/libexec/proxmox-storage
+proxmox_storage_trim_script: /usr/local/sbin/proxmox-lxc-fstrim
+proxmox_storage_readonly_script: "{{ proxmox_storage_script_dir }}/check-readonly"
+proxmox_storage_notify_script: "{{ proxmox_storage_script_dir }}/notify"
+proxmox_storage_notify_config: /etc/proxmox-storage/notify.conf
+proxmox_storage_health_dir: /etc/netdata/health.d
+proxmox_storage_health_file: "{{ proxmox_storage_health_dir }}/pve-local-lvm.conf"
+proxmox_storage_netdata_notify_config: /etc/netdata/health_alarm_notify.conf
+proxmox_storage_service_timeout: "2h"

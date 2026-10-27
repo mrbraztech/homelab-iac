@@ -1,0 +1,9 @@
+# {{ ansible_managed }}
+ALERT_EMAIL="{{ proxmox_storage_alert_email_resolved }}"
+SMTP_RELAY="{{ proxmox_storage_mail_relay }}"
+SMTP_PORT="{{ proxmox_storage_mail_port }}"
+MAIL_FROM="{{ proxmox_storage_mail_from }}"
+PVE_STORAGE_NAME="{{ proxmox_storage_local_storage }}"
+THIN_POOL="{{ proxmox_storage_thin_pool }}"
+LVS_BIN="/usr/sbin/lvs"
+PVESM_BIN="/usr/sbin/pvesm"

@@ -1,0 +1,13 @@
+[Unit]
+Description=Trim unused blocks on running LXC root filesystems
+Documentation=https://pve.proxmox.com/pve-docs/pct.1.html
+After=local-fs.target
+ConditionPathExists=/usr/sbin/pct
+
+[Service]
+Type=oneshot
+ExecStart={{ proxmox_storage_trim_script }}
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+TimeoutStartSec={{ proxmox_storage_service_timeout }}

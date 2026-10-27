@@ -1,0 +1,247 @@
+---
+- name: Check for Netdata installation
+  ansible.builtin.stat:
+    path: /etc/netdata
+  register: proxmox_storage_netdata_dir
+  when: proxmox_storage_monitoring_enabled | bool
+
+- name: Assert Netdata is available for storage monitoring
+  ansible.builtin.assert:
+    that:
+      - proxmox_storage_netdata_dir.stat.exists
+    fail_msg: "Netdata is required for local-lvm monitoring"
+  when: proxmox_storage_monitoring_enabled | bool
+
+- name: Get Proxmox root notification email
+  ansible.builtin.command:
+    argv:
+      - pvesh
+      - get
+      - /access/users/root@pam
+      - --output-format
+      - json
+  register: proxmox_storage_root_user
+  changed_when: false
+  check_mode: false
+  when:
+    - proxmox_storage_monitoring_enabled | bool
+    - proxmox_storage_alert_email | length == 0
+
+- name: Use configured storage alert email
+  ansible.builtin.set_fact:
+    proxmox_storage_alert_email_resolved: "{{ proxmox_storage_alert_email }}"
+  when:
+    - proxmox_storage_monitoring_enabled | bool
+    - proxmox_storage_alert_email | length > 0
+
+- name: Resolve storage alert email from Proxmox root user
+  ansible.builtin.set_fact:
+    proxmox_storage_alert_email_resolved: "{{ (proxmox_storage_root_user.stdout | from_json).email | default('') }}"
+  when:
+    - proxmox_storage_monitoring_enabled | bool
+    - proxmox_storage_alert_email | length == 0
+
+- name: Assert storage alert email is configured
+  ansible.builtin.assert:
+    that:
+      - proxmox_storage_alert_email_resolved | length > 0
+    fail_msg: >-
+      Set proxmox_storage_alert_email or configure an email for root@pam
+      before enabling storage notifications
+  when: proxmox_storage_monitoring_enabled | bool
+
+- name: Ensure storage script directory exists
+  ansible.builtin.file:
+    path: "{{ proxmox_storage_script_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Ensure storage state directory exists
+  ansible.builtin.file:
+    path: "{{ proxmox_storage_state_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: proxmox_storage_monitoring_enabled | bool
+
+- name: Ensure storage notification configuration directory exists
+  ansible.builtin.file:
+    path: "{{ proxmox_storage_notify_config | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: proxmox_storage_monitoring_enabled | bool
+
+- name: Ensure Netdata health directory exists
+  ansible.builtin.file:
+    path: "{{ proxmox_storage_health_dir }}"
+    state: directory
+    owner: root
+    group: netdata
+    mode: "0755"
+  when: proxmox_storage_monitoring_enabled | bool
+
+- name: Deploy storage notification configuration
+  ansible.builtin.template:
+    src: notify.conf.j2
+    dest: "{{ proxmox_storage_notify_config }}"
+    owner: root
+    group: root
+    mode: "0644"
+  when: proxmox_storage_monitoring_enabled | bool
+
+- name: Deploy storage notification helper
+  ansible.builtin.template:
+    src: notify.sh.j2
+    dest: "{{ proxmox_storage_notify_script }}"
+    owner: root
+    group: root
+    mode: "0755"
+  when: proxmox_storage_monitoring_enabled | bool
+
+- name: Deploy LXC TRIM script
+  ansible.builtin.template:
+    src: proxmox-lxc-fstrim.sh.j2
+    dest: "{{ proxmox_storage_trim_script }}"
+    owner: root
+    group: root
+    mode: "0755"
+  when: proxmox_storage_trim_enabled | bool
+
+- name: Deploy LXC TRIM service
+  ansible.builtin.template:
+    src: proxmox-lxc-fstrim.service.j2
+    dest: /etc/systemd/system/proxmox-lxc-fstrim.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload systemd manager configuration
+  when: proxmox_storage_trim_enabled | bool
+
+- name: Deploy LXC TRIM timer
+  ansible.builtin.template:
+    src: proxmox-lxc-fstrim.timer.j2
+    dest: /etc/systemd/system/proxmox-lxc-fstrim.timer
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload systemd manager configuration
+  when: proxmox_storage_trim_enabled | bool
+
+- name: Deploy thin pool read-only check script
+  ansible.builtin.template:
+    src: check-readonly.sh.j2
+    dest: "{{ proxmox_storage_readonly_script }}"
+    owner: root
+    group: root
+    mode: "0755"
+  when: proxmox_storage_monitoring_enabled | bool
+
+- name: Deploy thin pool read-only check service
+  ansible.builtin.template:
+    src: proxmox-storage-readonly.service.j2
+    dest: /etc/systemd/system/proxmox-storage-readonly.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload systemd manager configuration
+  when: proxmox_storage_monitoring_enabled | bool
+
+- name: Deploy thin pool read-only check timer
+  ansible.builtin.template:
+    src: proxmox-storage-readonly.timer.j2
+    dest: /etc/systemd/system/proxmox-storage-readonly.timer
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload systemd manager configuration
+  when: proxmox_storage_monitoring_enabled | bool
+
+- name: Deploy Netdata thin pool alarms
+  ansible.builtin.template:
+    src: pve-local-lvm.conf.j2
+    dest: "{{ proxmox_storage_health_file }}"
+    owner: root
+    group: netdata
+    mode: "0644"
+  notify: Restart Netdata
+  when: proxmox_storage_monitoring_enabled | bool
+
+- name: Deploy Netdata custom notification configuration
+  ansible.builtin.template:
+    src: health_alarm_notify.conf.j2
+    dest: "{{ proxmox_storage_netdata_notify_config }}"
+    owner: root
+    group: netdata
+    mode: "0640"
+  notify: Restart Netdata
+  when: proxmox_storage_monitoring_enabled | bool
+
+- name: Check existing LXC TRIM timer unit
+  ansible.builtin.stat:
+    path: /etc/systemd/system/proxmox-lxc-fstrim.timer
+  register: proxmox_storage_trim_timer_unit
+  when: not proxmox_storage_trim_enabled | bool
+
+- name: Disable and stop LXC TRIM timer
+  ansible.builtin.systemd:
+    name: proxmox-lxc-fstrim.timer
+    enabled: false
+    state: stopped
+  when:
+    - not proxmox_storage_trim_enabled | bool
+    - (proxmox_storage_trim_timer_unit.stat | default({})).exists | default(false)
+
+- name: Check existing thin pool read-only timer unit
+  ansible.builtin.stat:
+    path: /etc/systemd/system/proxmox-storage-readonly.timer
+  register: proxmox_storage_readonly_timer_unit
+  when: not proxmox_storage_monitoring_enabled | bool
+
+- name: Disable and stop thin pool read-only check timer
+  ansible.builtin.systemd:
+    name: proxmox-storage-readonly.timer
+    enabled: false
+    state: stopped
+  when:
+    - not proxmox_storage_monitoring_enabled | bool
+    - (proxmox_storage_readonly_timer_unit.stat | default({})).exists | default(false)
+
+- name: Remove Netdata thin pool alarms when monitoring is disabled
+  ansible.builtin.file:
+    path: "{{ proxmox_storage_health_file }}"
+    state: absent
+  notify: Restart Netdata
+  when: not proxmox_storage_monitoring_enabled | bool
+
+- name: Remove Netdata storage notification override when monitoring is disabled
+  ansible.builtin.file:
+    path: "{{ proxmox_storage_netdata_notify_config }}"
+    state: absent
+  notify: Restart Netdata
+  when: not proxmox_storage_monitoring_enabled | bool
+
+- name: Apply pending systemd and Netdata configuration changes
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start LXC TRIM timer
+  ansible.builtin.systemd:
+    name: proxmox-lxc-fstrim.timer
+    enabled: true
+    state: started
+  when:
+    - proxmox_storage_trim_enabled | bool
+    - not ansible_check_mode
+
+- name: Enable and start thin pool read-only check timer
+  ansible.builtin.systemd:
+    name: proxmox-storage-readonly.timer
+    enabled: true
+    state: started
+  when:
+    - proxmox_storage_monitoring_enabled | bool
+    - not ansible_check_mode
