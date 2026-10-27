@@ -8,6 +8,7 @@
   pre_tasks:
     - name: Gather service facts
       ansible.builtin.service_facts:
+      tags: mail_legacy_cleanup
 
     - name: Stop and disable legacy gateway services
       ansible.builtin.systemd:
@@ -15,17 +16,32 @@
         state: stopped
         enabled: false
       loop:
-        - microsocks
-        - wg-quick@proton
-      when: item in ansible_facts.services
+        - microsocks.service
+        - wg-quick@proton.service
+      when:
+        - item in ansible_facts.services
+        - ansible_facts.services[item].status | default('') != 'not-found'
+      tags: mail_legacy_cleanup
+
+    - name: Reset failed legacy WireGuard unit
+      ansible.builtin.command:
+        cmd: systemctl reset-failed wg-quick@proton.service
+      changed_when: false
+      failed_when: false
+      when:
+        - "'wg-quick@proton.service' in ansible_facts.services"
+        - ansible_facts.services['wg-quick@proton.service'].status | default('') != 'not-found'
+      tags: mail_legacy_cleanup
 
     - name: Remove legacy gateway packages
       ansible.builtin.apt:
         name:
           - microsocks
           - wireguard
-          - iptables-persistent
+          - wireguard-tools
         state: absent
+        purge: true
+      tags: mail_legacy_cleanup
 
     - name: Remove legacy gateway configuration
       ansible.builtin.file:
@@ -35,6 +51,21 @@
         - /etc/wireguard/proton.conf
         - /etc/systemd/system/microsocks.service
         - /etc/sysctl.d/99-router.conf
+      tags: mail_legacy_cleanup
+
+    - name: Check legacy firewall rules file
+      ansible.builtin.stat:
+        path: /etc/iptables/rules.v4
+      register: mail_legacy_iptables_v4
+      tags: mail_legacy_cleanup
+
+    - name: Remove obsolete Proton NAT rule
+      ansible.builtin.lineinfile:
+        path: /etc/iptables/rules.v4
+        regexp: '^-A POSTROUTING -o proton -j MASQUERADE$'
+        state: absent
+      when: mail_legacy_iptables_v4.stat.exists
+      tags: mail_legacy_cleanup
   roles:
     - bootstrap
     - postfix
