@@ -22,6 +22,7 @@ Current NPM proxy hosts configuration extracted from CT 101 (proxy).
 | media.omni.corp | 192.168.10.17 | 2283 | Yes | Omni Homelab Wildcard | Immich (media CT) |
 | switch.omni.corp | 192.168.10.6 | 80 | Yes | Omni Homelab Wildcard | Network switch management |
 | database.omni.corp | 192.168.10.14 | 8080 | Yes | Omni Homelab Wildcard | PostgreSQL (tools CT) |
+| bip39.omni.corp | 192.168.10.14 | 80 | Yes | Omni Homelab Wildcard | BIP39 mnemonic generator (tools CT) |
 | ai-gateway.omni.corp | 192.168.10.18 | 20128 | Yes | Omni Homelab Wildcard | AI gateway (ai-gateway CT) |
 | agent.omni.corp | 192.168.10.19 | 9119 | Yes | Omni Homelab Wildcard | Agent dashboard (agent CT) |
 | vault.omni.corp | 192.168.10.20 | 80 | Yes | Omni Homelab Wildcard | Vaultwarden (vault CT) |

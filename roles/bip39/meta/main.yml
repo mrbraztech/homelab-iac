@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  author: homelab
+  description: BIP39 mnemonic generator web application
+  license: MIT
+  min_ansible_version: "2.15"
+
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+
+dependencies: []

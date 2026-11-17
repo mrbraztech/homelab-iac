@@ -23,6 +23,7 @@ internal_ca_domains:
       - media.omni.corp
       - switch.omni.corp
       - database.omni.corp
+      - bip39.omni.corp
       - network.omni.corp
       - ai-gateway.omni.corp
       - agent.omni.corp

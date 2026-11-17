@@ -17,6 +17,7 @@ pihole_custom_dns:
       - media.omni.corp
       - switch.omni.corp
       - database.omni.corp
+      - bip39.omni.corp
       - ai-gateway.omni.corp
       - agent.omni.corp
       - network.omni.corp

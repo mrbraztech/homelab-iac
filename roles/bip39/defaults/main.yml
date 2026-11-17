@@ -1,0 +1,6 @@
+---
+bip39_version: "0.5.6"
+bip39_install_dir: /var/www/bip39
+bip39_server_name: bip39.omni.corp
+bip39_listen_port: 80
+bip39_release_url: "https://github.com/iancoleman/bip39/releases/download/{{ bip39_version }}/bip39-standalone.html"

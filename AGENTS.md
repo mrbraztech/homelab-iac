@@ -34,7 +34,7 @@ ansible-inventory --graph
 | Playbook | Host | Services |
 |---|---|---|
 | `nas.yml` | nas | PostgreSQL, Redis, OMV, MinIO, Netdata child |
-| `tools.yml` | tools | CyberChef, pgAdmin |
+| `tools.yml` | tools | CyberChef, BIP39 mnemonic generator, pgAdmin |
 | `ai-gateway.yml` | ai-gateway | AI gateway (9Router + Headroom) |
 | `proxy.yml` | proxy | Nginx Proxy Manager, internal CA |
 | `certificates.yml` | proxy | Internal CA certificate lifecycle only |

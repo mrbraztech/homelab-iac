@@ -7,4 +7,5 @@
     - bootstrap
     - docker
     - cyberchef
+    - bip39
     - pgadmin

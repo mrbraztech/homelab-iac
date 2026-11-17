@@ -115,7 +115,7 @@ homelab-iac/
 │           └── vault/vault.yml
 ├── playbooks/
 │   ├── nas.yml                  # NAS: bootstrap, docker, postgres, redis, omv, print_server
-│   ├── tools.yml                # Tools: bootstrap, docker, cyberchef, pgadmin
+│   ├── tools.yml                # Tools: bootstrap, docker, cyberchef, bip39, pgadmin
 │   ├── ai-gateway.yml            # AI gateway: bootstrap, docker, ai_gateway
 │   ├── proxy.yml                # Proxy: bootstrap, docker, nginx_proxy_manager
 │   ├── dns.yml                  # DNS: bootstrap, docker, pihole
@@ -135,6 +135,7 @@ homelab-iac/
 │   ├── redis/                   # Redis 7 Alpine
 │   ├── omv/                     # OpenMediaVault + NFS/SMB
 │   ├── cyberchef/               # CyberChef (Apache)
+│   ├── bip39/                   # BIP39 mnemonic generator (Apache)
 │   ├── pgadmin/                 # pgAdmin4
 │   ├── ai_gateway/               # AI gateway (9Router + Headroom)
 │   ├── nginx_proxy_manager/     # Nginx Proxy Manager
@@ -253,7 +254,7 @@ All hosts in `inventories/lab/hosts.yml` under the `lab` group:
 | Host | IP | Playbook | Services |
 |---|---|---|---|
 | nas | 192.168.10.12 | `nas.yml` | PostgreSQL, Redis, OMV, MinIO, CUPS print server |
-| tools | 192.168.10.14 | `tools.yml` | CyberChef, pgAdmin |
+| tools | 192.168.10.14 | `tools.yml` | CyberChef, BIP39 mnemonic generator, pgAdmin |
 | ai-gateway | 192.168.10.18 | `ai-gateway.yml` | AI gateway (9Router + Headroom) |
 | proxy | 192.168.10.3 | `proxy.yml` | Nginx Proxy Manager |
 | dns | 192.168.10.2 | `dns.yml` | Pi-hole |
@@ -362,7 +363,7 @@ Both must pass. Pre-commit hooks run these automatically.
 ├── .11  — Network controller (Omada)
 ├── .12  — NAS (PostgreSQL, Redis, OMV, MinIO, CUPS print server)
 ├── .13  — Site (Frigate NVR)
-├── .14  — Tools (CyberChef, pgAdmin)
+├── .14  — Tools (CyberChef, BIP39 mnemonic generator, pgAdmin)
 ├── .15  — Cloud (Nextcloud + OnlyOffice)
 ├── .16  — DocServer (OnlyOffice)
 ├── .17  — Media (Immich)

@@ -1,0 +1,13 @@
+<VirtualHost *:{{ bip39_listen_port }}>
+    ServerName {{ bip39_server_name }}
+
+    DocumentRoot {{ bip39_install_dir }}
+
+    <Directory {{ bip39_install_dir }}>
+        Options Indexes FollowSymLinks
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+    DirectoryIndex index.html
+</VirtualHost>

@@ -1,0 +1,62 @@
+---
+- name: Ensure Apache2 is installed
+  ansible.builtin.apt:
+    name: apache2
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Ensure Apache2 is enabled and running
+  ansible.builtin.service:
+    name: apache2
+    enabled: true
+    state: started
+
+- name: Ensure BIP39 directory exists
+  ansible.builtin.file:
+    path: "{{ bip39_install_dir }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: "0755"
+
+- name: Read installed BIP39 version marker
+  ansible.builtin.slurp:
+    src: "{{ bip39_install_dir }}/.ansible_version"
+  register: bip39_version_marker
+  failed_when: false
+  changed_when: false
+
+- name: Download BIP39 standalone application
+  ansible.builtin.get_url:
+    url: "{{ bip39_release_url }}"
+    dest: "{{ bip39_install_dir }}/index.html"
+    owner: www-data
+    group: www-data
+    mode: "0644"
+  register: bip39_download
+  when: (bip39_version_marker.content | default('') | b64decode | trim) != bip39_version
+
+- name: Write BIP39 version marker
+  ansible.builtin.copy:
+    content: "{{ bip39_version }}"
+    dest: "{{ bip39_install_dir }}/.ansible_version"
+    owner: www-data
+    group: www-data
+    mode: "0644"
+  when: bip39_download is not skipped and not ansible_check_mode
+
+- name: Deploy BIP39 VirtualHost
+  ansible.builtin.template:
+    src: bip39.conf.j2
+    dest: /etc/apache2/sites-available/bip39.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Apache2
+
+- name: Enable BIP39 site
+  ansible.builtin.command: a2ensite bip39.conf
+  register: bip39_a2ensite
+  changed_when: '"already enabled" not in bip39_a2ensite.stdout'
+  notify: Restart Apache2
