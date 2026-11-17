@@ -34,7 +34,7 @@ resource "proxmox_virtual_environment_container" "site" {
   }
 
   memory {
-    dedicated = 8000
+    dedicated = 12000
     swap      = 8000
   }
 

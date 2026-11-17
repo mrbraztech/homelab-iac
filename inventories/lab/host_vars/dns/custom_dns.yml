@@ -23,6 +23,8 @@ pihole_custom_dns:
       - network.omni.corp
       - vault.omni.corp
       - relay.hearthlane.omni.corp
+      - relay-uat.hearthlane.omni.corp
+      - frigate.hearthlane.omni.corp
   # Short-name records so `ssh root@<hostname>` resolves directly to each CT.
   - ip: 192.168.10.2
     domains: [dns]

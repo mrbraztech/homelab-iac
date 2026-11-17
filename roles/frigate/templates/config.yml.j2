@@ -29,7 +29,7 @@ telemetry:
     intel_gpu_stats: false
 
 birdseye:
-  enabled: true
+  enabled: {{ frigate_birdseye_enabled | default(false) | lower }}
   mode: objects
 
 objects:

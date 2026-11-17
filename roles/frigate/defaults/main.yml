@@ -9,6 +9,9 @@ frigate_config_path: /opt/frigate/config
 frigate_install_dir: /opt/frigate
 
 frigate_mqtt_enabled: false
+# Birdseye keeps a full-resolution composite stream per camera in memory; it is
+# the main driver of the Frigate memory footprint on this 3-camera deployment.
+frigate_birdseye_enabled: false
 
 frigate_cameras:
   backyard:
